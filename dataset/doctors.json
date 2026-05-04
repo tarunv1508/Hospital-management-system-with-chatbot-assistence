@@ -1,0 +1,6 @@
+{
+  "cardiology": ["Dr. Arjun Reddy", "Dr. Rajesh Kumar", "Dr. Vikram Singh"],
+  "neurology": ["Dr. Sai Priya", "Dr. Anu", "Dr. Neha Sharma"],
+  "gastroenterology": ["Dr. Rohit Verma", "Dr. Priya Singh"],
+  "general_medicine": ["Dr. Ramesh Kumar", "Dr. Pooja Menon"]
+}

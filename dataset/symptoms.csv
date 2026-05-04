@@ -1,0 +1,22 @@
+symptom,department
+chest pain,cardiology
+heart problem,cardiology
+shortness of breath,cardiology
+
+headache,neurology
+migraine,neurology
+dizziness,neurology
+
+stomach pain,gastroenterology
+digestion problem,gastroenterology
+acidity,gastroenterology
+
+joint pain,orthopedics
+back pain,orthopedics
+
+skin rash,dermatology
+acne,dermatology
+
+fever,general_medicine
+cold,general_medicine
+weakness,general_medicine

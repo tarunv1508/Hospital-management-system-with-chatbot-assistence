@@ -1,0 +1,18 @@
+{
+  "cardiology": ["DR.S.Arjun Reddy", "DR.Rajesh Kumar", "DR.Vikram Singh"],
+  "neurology": ["DR.S.SaiPriya", "DR.T.Anu", "DR.Neha Sharma"],
+  "pediatrics": ["DR.N.MadhuLatha", "DR.Priya Verma", "DR.Arun Nair"],
+  "orthopedics": ["DR.M.Sameer", "DR.Ravi Patel", "DR.Suresh Gupta"],
+  "dermatology": ["DR.N.lohith", "DR.Anjali Singh", "DR.Meera Joshi"],
+  "oncology": ["DR.T.Anu", "DR.Ashok Kumar", "DR.Sneha Desai"],
+  "general_medicine": ["DR.S.Arjun Reddy", "DR.Ramesh Kumar", "DR.Pooja Menon"],
+  "ent": ["DR.Vikram Sharma", "DR.Anand Gupta", "DR.Shruti Patel"],
+  "gastroenterology": ["DR.Rohit Verma", "DR.Priya Singh", "DR.Aditya Sengupta"],
+  "nephrology": ["DR.Sanjay Kumar", "DR.Meera Nair", "DR.Rajiv Desai"],
+  "urology": ["DR.Harsh Patel", "DR.Vikas Sharma", "DR.Amit Singh"],
+  "pulmonology": ["DR.Deepak Verma", "DR.Sneha Kumar", "DR.Arjun Sharma"],
+  "endocrinology": ["DR.Divya Singh", "DR.Ashok Nair", "DR.Priya Gupta"],
+  "gynecology": ["DR.Ragini Sharma", "DR.Neha Verma", "DR.Anjali Patel"],
+  "psychiatry": ["DR.Ramesh Singh", "DR.Anjali Kumar", "DR.Vikram Desai"],
+  "general": ["DR.S.Arjun Reddy", "DR.Ramesh Kumar", "DR.Pooja Menon"]
+}
