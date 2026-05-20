@@ -122,23 +122,40 @@
               </div>
 
               <div id="chatbox" class="chatbox mb-4">
-                <p><b>Bot:</b> Hello! Please describe your symptoms or ask a health question.</p>
+                <div class="chat-message bot-message">
+                  <strong>Healthcare Assistant:</strong>
+                  <p>Hello! I'm your healthcare AI assistant. 👋 I can help you understand your symptoms and recommend the best specialist doctor for your needs.</p>
+                  <p>Please describe what you're experiencing. You can:</p>
+                  <ul style="margin-bottom: 0; padding-left: 20px;">
+                    <li>Mention specific symptoms (e.g., "chest pain", "severe headache")</li>
+                    <li>Describe how you feel (e.g., "I've been dizzy and have trouble breathing")</li>
+                    <li>Ask about conditions (e.g., "I think I have diabetes")</li>
+                  </ul>
+                </div>
               </div>
 
-              <div class="input-area">
-                <input id="userInput" type="text" class="form-control" placeholder="Enter your symptoms or ask a question...">
-                <button type="button" class="btn btn-primary btn-send" onclick="sendMessage()">
+              <div class="input-area d-flex gap-2">
+                <input id="userInput" type="text" class="form-control" placeholder="Describe your symptoms or health concern..." autocomplete="off">
+                <button type="button" class="btn btn-primary btn-send" onclick="sendMessage()" title="Send message (or press Enter)">
                   <i class="bi bi-send-fill"></i>
-                  Send
                 </button>
               </div>
 
               <div class="chat-suggestions mt-4">
-                <p class="mb-2"><strong>Try asking:</strong></p>
+                <p class="mb-3"><strong>Quick examples - click to try:</strong></p>
                 <div class="suggestion-badges">
-                  <span>What does chest pain indicate?</span>
-                  <span>How can I reduce fever?</span>
-                  <span>Book a doctor appointment</span>
+                  <button class="suggestion-btn" onclick="sendSuggestion('I have severe chest pain and difficulty breathing')">
+                    <i class="bi bi-heart-fill"></i> Chest pain & breathing issues
+                  </button>
+                  <button class="suggestion-btn" onclick="sendSuggestion('I have a severe headache and dizziness for 3 days')">
+                    <i class="bi bi-exclamation-circle"></i> Headache & dizziness
+                  </button>
+                  <button class="suggestion-btn" onclick="sendSuggestion('I have persistent stomach pain and loss of appetite')">
+                    <i class="bi bi-capsule"></i> Stomach issues
+                  </button>
+                  <button class="suggestion-btn" onclick="sendSuggestion('I am experiencing severe anxiety and panic attacks')">
+                    <i class="bi bi-brain"></i> Mental health concerns
+                  </button>
                 </div>
               </div>
             </div>

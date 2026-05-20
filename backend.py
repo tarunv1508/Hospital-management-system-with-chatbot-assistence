@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from datetime import datetime, timedelta
 import re
+import json
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = 'healthcare_chatbot_secret_key_2024'
 
 # Doctor roster and symptom mapping - Comprehensive dataset
 DOCTORS = {
@@ -37,6 +40,8 @@ SYMPTOM_KEYWORDS = {
     
     # Neurology
     "headache": "neurology",
+    "headach": "neurology",
+    "head ache": "neurology",
     "migraine": "neurology",
     "numbness": "neurology",
     "dizziness": "neurology",
@@ -45,6 +50,9 @@ SYMPTOM_KEYWORDS = {
     "brain": "neurology",
     "nerve pain": "neurology",
     "tremor": "neurology",
+    "pressure in my head": "neurology",
+    "pain in my head": "neurology",
+    "feeling dizzy": "neurology",
     
     # Dermatology
     "skin rash": "dermatology",
@@ -68,13 +76,25 @@ SYMPTOM_KEYWORDS = {
     
     # Gastroenterology
     "stomach pain": "gastroenterology",
+    "tummy pain": "gastroenterology",
     "acidity": "gastroenterology",
+    "digesting": "gastroenterology",
     "digestion": "gastroenterology",
+    "not digesting": "gastroenterology",
+    "food not digesting": "gastroenterology",
+    "food is not digesting": "gastroenterology",
+    "cant digest": "gastroenterology",
+    "cannot digest": "gastroenterology",
+    "stomach upset": "gastroenterology",
+    "feeling sick": "gastroenterology",
+    "acid reflux": "gastroenterology",
     "gastric": "gastroenterology",
     "heartburn": "gastroenterology",
     "indigestion": "gastroenterology",
     "ulcer": "gastroenterology",
     "abdominal pain": "gastroenterology",
+    "bloated": "gastroenterology",
+    "bloating": "gastroenterology",
     
     # Orthopedics
     "joint pain": "orthopedics",
@@ -156,6 +176,10 @@ SYMPTOM_KEYWORDS = {
     "nausea": "general_medicine",
     "vomiting": "general_medicine",
     "diarrhea": "general_medicine",
+    "feeling sick": "general_medicine",
+    "not feeling well": "general_medicine",
+    "i feel sick": "general_medicine",
+    "i am not well": "general_medicine",
 }
 
 
@@ -173,6 +197,33 @@ def identify_department_scores(symptoms_text: str) -> dict:
     for keyword, dept in SYMPTOM_KEYWORDS.items():
         if keyword in text:
             scores[dept] += 1
+
+    if not scores:
+        # Fallback: match partial symptom tokens to common departments for everyday language.
+        tokens = set(text.split())
+        fallback_tokens = {
+            "head": "neurology",
+            "headache": "neurology",
+            "headach": "neurology",
+            "dizzy": "neurology",
+            "food": "gastroenterology",
+            "digest": "gastroenterology",
+            "stomach": "gastroenterology",
+            "tummy": "gastroenterology",
+            "sick": "general_medicine",
+            "nausea": "general_medicine",
+            "fever": "general_medicine",
+            "pain": "general_medicine",
+            "blood": "gastroenterology",
+            "stool": "gastroenterology",
+            "vomit": "general_medicine",
+            "vomiting": "general_medicine",
+            "bloating": "gastroenterology",
+            "bloated": "gastroenterology",
+        }
+        for token, dept in fallback_tokens.items():
+            if token in tokens:
+                scores[dept] += 1
 
     return dict(scores)
 
@@ -197,7 +248,43 @@ DEPARTMENT_PRIORITY = [
 ]
 
 
+# Disease/Condition mapping to departments
+DISEASE_MAPPING = {
+    "heart disease": "cardiology",
+    "hypertension": "cardiology",
+    "arrhythmia": "cardiology",
+    "migraine": "neurology",
+    "parkinson": "neurology",
+    "epilepsy": "neurology",
+    "fracture": "orthopedics",
+    "arthritis": "orthopedics",
+    "psoriasis": "dermatology",
+    "eczema": "dermatology",
+    "leukemia": "oncology",
+    "bronchitis": "pulmonology",
+    "asthma": "pulmonology",
+    "diabetes": "endocrinology",
+    "thyroid disorder": "endocrinology",
+    "gastritis": "gastroenterology",
+    "ulcer": "gastroenterology",
+    "kidney disease": "nephrology",
+    "prostate": "urology",
+    "ent infection": "ent",
+    "women health": "gynecology",
+    "anxiety": "psychiatry",
+    "depression": "psychiatry",
+}
+
+def get_matching_departments(scores: dict) -> list:
+    """Return all matching departments sorted by relevance score"""
+    if not scores:
+        return ["general"]
+    
+    sorted_depts = sorted(scores.items(), key=lambda x: -x[1])
+    return [dept for dept, _ in sorted_depts]
+
 def pick_best_department(scores: dict) -> str:
+    """Pick the single best department from all matches"""
     if not scores:
         return "general"
 
@@ -210,54 +297,244 @@ def pick_best_department(scores: dict) -> str:
 
     return candidate_departments[0]
 
+def get_doctors_for_department(dept: str) -> list:
+    """Get all doctors for a given department"""
+    return DOCTORS.get(dept, DOCTORS.get("general", []))
 
-def assign_doctor(primary_department: str, all_departments: list) -> (str, list):
-    primary_doctor_list = DOCTORS.get(primary_department) or DOCTORS.get("general")
-    primary_doctor = primary_doctor_list[0]
+def rank_doctors(primary_dept: str, all_depts: list, symptom_text: str) -> dict:
+    """Rank all matching doctors from primary and secondary departments"""
+    doctors_with_scores = {}
+    
+    # Primary department doctors get highest score
+    primary_doctors = get_doctors_for_department(primary_dept)
+    for doc in primary_doctors:
+        doctors_with_scores[doc] = {"score": 10, "department": primary_dept}
+    
+    # Secondary department doctors get lower score
+    for dept in all_depts:
+        if dept != primary_dept:
+            dept_doctors = get_doctors_for_department(dept)
+            for doc in dept_doctors:
+                if doc not in doctors_with_scores:
+                    doctors_with_scores[doc] = {"score": 5, "department": dept}
+    
+    return doctors_with_scores
 
-    alternate_doctors = []
-    for dept in all_departments:
-        if dept != primary_department and dept in DOCTORS:
-            doc = DOCTORS[dept][0]
-            if doc not in alternate_doctors and doc != primary_doctor:
-                alternate_doctors.append(doc)
+def generate_disease_info(department: str) -> dict:
+    """Generate information about common diseases in a department"""
+    disease_info = {
+        "cardiology": {
+            "conditions": ["Heart disease", "High blood pressure", "Arrhythmia", "Heart failure"],
+            "description": "Cardiovascular diseases affect the heart and blood vessels."
+        },
+        "neurology": {
+            "conditions": ["Migraines", "Stroke", "Epilepsy", "Parkinson's disease"],
+            "description": "Neurological conditions affect the nervous system."
+        },
+        "orthopedics": {
+            "conditions": ["Fractures", "Arthritis", "Sprains", "Disc herniation"],
+            "description": "Orthopedic conditions affect bones, joints, and muscles."
+        },
+        "dermatology": {
+            "conditions": ["Psoriasis", "Eczema", "Acne", "Skin infections"],
+            "description": "Dermatological conditions affect the skin and related tissues."
+        },
+        "pulmonology": {
+            "conditions": ["Asthma", "Bronchitis", "Pneumonia", "COPD"],
+            "description": "Pulmonary conditions affect the respiratory system."
+        },
+        "general_medicine": {
+            "conditions": ["Fever", "Cold", "Flu", "General weakness"],
+            "description": "General health conditions affecting overall well-being."
+        }
+    }
+    return disease_info.get(department, {"conditions": ["General conditions"], "description": "Healthcare conditions"})
 
-    return primary_doctor, alternate_doctors
 
+def analyze_severity(symptom_text: str) -> str:
+    """Analyze the severity of symptoms mentioned"""
+    severe_keywords = ["severe", "extreme", "unbearable", "critical", "emergency", "hospital", "urgent", "life threatening"]
+    moderate_keywords = ["persistent", "chronic", "recurring", "regular", "constant"]
+    mild_keywords = ["mild", "slight", "minor", "little", "small"]
+    
+    text_lower = symptom_text.lower()
+    
+    for keyword in severe_keywords:
+        if keyword in text_lower:
+            return "severe"
+    
+    for keyword in moderate_keywords:
+        if keyword in text_lower:
+            return "moderate"
+    
+    for keyword in mild_keywords:
+        if keyword in text_lower:
+            return "mild"
+    
+    return "unknown"
+
+def extract_key_symptoms(symptom_text: str) -> list:
+    """Extract and highlight key symptoms from the text"""
+    symptoms_found = []
+    text_lower = normalize_text(symptom_text)
+    
+    for keyword in SYMPTOM_KEYWORDS:
+        if keyword in text_lower:
+            symptoms_found.append(keyword)
+    
+    return list(set(symptoms_found))  # Remove duplicates
+
+def generate_followup_questions(department: str, symptoms: list) -> list:
+    """Generate intelligent follow-up questions based on symptoms and department"""
+    followup_map = {
+        "cardiology": [
+            "Do you have a family history of heart disease?",
+            "Have you experienced shortness of breath?",
+            "Do you have high blood pressure or take blood pressure medication?"
+        ],
+        "neurology": [
+            "When did the headaches start?",
+            "Do you experience vision problems?",
+            "Have you had any recent head injuries?"
+        ],
+        "orthopedics": [
+            "Was there an injury or accident?",
+            "Is the pain constant or intermittent?",
+            "Does any movement make it worse?"
+        ],
+        "dermatology": [
+            "Is the skin condition itchy or painful?",
+            "Has it been spreading?",
+            "How long have you had this condition?"
+        ],
+        "pulmonology": [
+            "Do you smoke or have you smoked?",
+            "Is there any chest pain with breathing?",
+            "Have you been exposed to dust or pollutants?"
+        ],
+        "gastroenterology": [
+            "Is there any blood in your stool?",
+            "What foods trigger your symptoms?",
+            "How often are you experiencing these symptoms?"
+        ]
+    }
+    
+    return followup_map.get(department, [
+        "When did these symptoms start?",
+        "Have you experienced similar symptoms before?",
+        "Are you taking any medications?"
+    ])
+
+def is_affirmative(text: str) -> bool:
+    return any(word in text for word in ["yes", "yeah", "yep", "sure", "of course", "definitely", "absolutely"])
+
+def is_negative(text: str) -> bool:
+    return any(word in text for word in ["no", "not", "never", "none", "nope"])
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    """Enhanced chatbot endpoint with multi-turn conversation support"""
     payload = request.get_json(force=True)
     user_message = (payload.get("message") or "").strip()
-
+    
     if not user_message:
-        return jsonify({"reply": "Please tell me your symptoms to find a suitable doctor."}), 400
-
+        return jsonify({
+            "reply": "Hello! I'm your healthcare assistant. Could you describe your symptoms or health concerns? You can tell me things like 'I have a severe headache and dizziness' or 'I'm experiencing chest pain when I exercise.'",
+            "doctors": [],
+            "departments": [],
+            "suggestions": [
+                "I have a headache and dizziness",
+                "I'm experiencing chest pain",
+                "I have persistent stomach pain",
+                "I'm feeling very anxious and stressed"
+            ],
+            "follow_up_questions": []
+        }), 400
+    
+    # Identify all matching departments
     scores = identify_department_scores(user_message)
+    last_followup_dept = session.get("followup_department")
+
+    if not scores and last_followup_dept:
+        # Use the previous follow-up department as a context hint for short answers like "yes" or "no".
+        scores[last_followup_dept] = 1
+
+    if not scores:
+        # No specific symptoms found
+        return jsonify({
+            "reply": "I didn't catch enough detail yet. Please describe what you feel in normal words, for example: 'my food is not digesting', 'I have a headache', or 'I'm feeling dizzy and tired'. You don't need to know exact medical terms.",
+            "doctors": [],
+            "departments": [],
+            "suggestions": [
+                "My food is not digesting",
+                "I have a headache and dizziness",
+                "I am feeling very tired and sick",
+                "I have stomach pain after eating"
+            ],
+            "follow_up_questions": []
+        }), 200
+    
+    # Get key information
     primary_department = pick_best_department(scores)
-    matched_departments = sorted(scores.keys(), key=lambda d: (-scores.get(d, 0), DEPARTMENT_PRIORITY.index(d) if d in DEPARTMENT_PRIORITY else 999))
-
-    primary_doctor, alternate_doctors = assign_doctor(primary_department, matched_departments)
-
-    if alternate_doctors:
-        alt_text = ", ".join(alternate_doctors[:2])
-        reply = (
-            f"Based on symptoms, the best match is {primary_department.capitalize()} specialist {primary_doctor}. "
-            f"As your input spans multiple areas, other suitable doctors could be {alt_text}. "
-            "Book the primary doctor via appointment page for fastest care."
-        )
+    matching_departments = get_matching_departments(scores)
+    key_symptoms = extract_key_symptoms(user_message)
+    severity = analyze_severity(user_message)
+    
+    # Get doctors
+    doctors_ranked = rank_doctors(primary_department, matching_departments, user_message)
+    primary_doctors = get_doctors_for_department(primary_department)
+    all_alternative_doctors = []
+    
+    # Collect alternative doctors from secondary departments
+    for dept in matching_departments[1:4]:  # Get up to 3 alternative departments
+        dept_doctors = get_doctors_for_department(dept)
+        all_alternative_doctors.extend(dept_doctors[:2])  # Top 2 from each dept
+    
+    # Generate intelligent response
+    disease_info = generate_disease_info(primary_department)
+    followup_questions = generate_followup_questions(primary_department, key_symptoms)
+    
+    # Keep follow-up context for short replies to the question
+    session["followup_department"] = primary_department
+    session["last_followup_questions"] = followup_questions[:2]
+    session.modified = True
+    
+    # Build comprehensive response
+    symptoms_str = ", ".join(key_symptoms) if key_symptoms else "your symptoms"
+    severity_str = f"with {severity} severity " if severity != "unknown" else ""
+    
+    dept_name = primary_department.replace("_", " ").title()
+    
+    if len(primary_doctors) > 1:
+        doctors_str = f"{', '.join(primary_doctors[:-1])} or {primary_doctors[-1]}"
     else:
-        reply = (
-            f"Based on your symptoms, the best match is {primary_department.capitalize()} specialist {primary_doctor}. "
-            "Please book an appointment at our hospital reception or via the appointment page."
-        )
-
+        doctors_str = primary_doctors[0] if primary_doctors else "our specialist"
+    
+    reply = (
+        f"Based on {symptoms_str} {severity_str}I recommend a **{dept_name}** specialist. "
+        f"\n\nPrimary recommendations: **{doctors_str}**"
+    )
+    
+    if all_alternative_doctors:
+        alt_str = ", ".join(all_alternative_doctors[:3])
+        reply += f"\n\nAlternative specialists: {alt_str}"
+    
+    reply += (
+        f"\n\n**About {dept_name}:**\n{disease_info['description']}"
+        f"\n\nCommon conditions: {', '.join(disease_info['conditions'])}"
+    )
+    
     return jsonify({
-        "department": primary_department,
-        "doctor": primary_doctor,
-        "alternates": alternate_doctors,
-        "reply": reply
-    })
+        "reply": reply,
+        "primary_department": primary_department,
+        "matching_departments": matching_departments,
+        "primary_doctors": primary_doctors,
+        "alternative_doctors": all_alternative_doctors[:3],
+        "symptoms_found": key_symptoms,
+        "severity": severity,
+        "follow_up_questions": followup_questions[:2],
+        "next_action": "Would you like me to ask follow-up questions or help you book an appointment?"
+    }), 200
 
 
 @app.route("/health", methods=["GET"])

@@ -83,14 +83,317 @@ body.chatbot-page {
   gap: 0.75rem;
 }
 
-.suggestion-badges span {
+.suggestion-btn {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   background: #eaf1ff;
-  border-radius: 999px;
-  padding: 0.75rem 1rem;
-  font-size: 0.9rem;
+  border: 1px solid rgba(13, 110, 253, 0.2);
+  border-radius: 20px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
   color: #1a3568;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.suggestion-btn:hover {
+  background: #d6e5ff;
+  border-color: #0d6efd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.suggestion-btn i {
+  font-size: 1rem;
+}
+
+/* Chat Message Styles */
+.chat-message {
+  margin-bottom: 1.2rem;
+  line-height: 1.6;
+}
+
+.user-message {
+  background: #0d6efd;
+  color: white;
+  padding: 0.8rem 1.2rem;
+  border-radius: 18px;
+  max-width: 80%;
+  margin-left: auto;
+  word-wrap: break-word;
+}
+
+.user-message strong {
+  display: none;
+}
+
+.bot-message {
+  background: #f0f5ff;
+  color: #333;
+  padding: 1rem;
+  border-radius: 18px;
+  border-left: 3px solid #0d6efd;
+  max-width: 95%;
+}
+
+.bot-message strong {
+  color: #0d6efd;
+}
+
+.bot-response-content {
+  margin-top: 0.8rem;
+}
+
+.response-text {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+/* Symptoms Found */
+.symptoms-found {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.symptoms-found strong {
+  color: #856404;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.tag {
+  display: inline-block;
+  background: #e2e3e5;
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+/* Severity Indicator */
+.severity-indicator {
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.severity-severe {
+  background: #f8d7da;
+  border-left: 3px solid #dc3545;
+  color: #721c24;
+}
+
+.severity-moderate {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  color: #856404;
+}
+
+.severity-mild {
+  background: #d1ecf1;
+  border-left: 3px solid #17a2b8;
+  color: #0c5460;
+}
+
+/* Doctors Recommendation */
+.doctors-recommendation {
+  background: #e7f3ff;
+  border-left: 3px solid #0d6efd;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.doctors-recommendation strong {
+  color: #0d6efd;
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.doctors-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.doctor-card {
+  background: white;
+  border: 2px solid #0d6efd;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.doctor-card:hover {
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  transform: translateY(-2px);
+}
+
+.doctor-name {
+  font-weight: 600;
+  color: #0d6efd;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.doctor-spec {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.doctor-card .book-btn {
+  width: 100%;
+  padding: 0.5rem 0.25rem;
+  font-size: 0.8rem;
+}
+
+/* Alternative Doctors */
+.alternative-doctors {
+  background: #e8f5e9;
+  border-left: 3px solid #28a745;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.alternative-doctors strong {
+  color: #155724;
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.alternatives-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.alt-doctor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border: 1px solid #28a745;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.alt-doctor .doctor-name {
+  color: #155724;
+  margin: 0;
+}
+
+/* Follow-up Questions */
+.follow-up-section {
+  background: #cfe2ff;
+  border-left: 3px solid #0d6efd;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.follow-up-section strong {
+  color: #004085;
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.follow-up-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.follow-up-btn {
+  background: white;
+  border: 1px solid #0d6efd;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  color: #0d6efd;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.follow-up-btn:hover {
+  background: #0d6efd;
+  color: white;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+}
+
+/* Next Action */
+.next-action {
+  background: #f8f9fa;
+  border-left: 3px solid #6c757d;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #495057;
+  font-style: italic;
+}
+
+/* Typing Indicator */
+.typing-indicator span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0d6efd;
+  margin: 0 3px;
+  animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}
+
+/* Error Message */
+.error-message {
+  background: #f8d7da;
+  border-left: 3px solid #dc3545;
+  color: #721c24;
+}
+
+.error-message strong {
+  color: #dc3545;
 }
 
 .feature-card {
