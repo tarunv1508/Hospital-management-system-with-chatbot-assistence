@@ -64,11 +64,28 @@
     })
     .then(data => {
       thisForm.querySelector('.loading').classList.remove('d-block');
-      if (data.trim() == 'OK') {
+      let parsed = null;
+      try {
+        parsed = JSON.parse(data);
+      } catch (error) {
+        parsed = null;
+      }
+
+      if (parsed && parsed.status === 'OK') {
+        thisForm.querySelector('.sent-message').classList.add('d-block');
+        thisForm.reset();
+        if (thisForm.id === 'appointment-form') {
+          alert(`Your appointment has been scheduled!\nAppointment ID: ${parsed.appointment_id}\nName: ${parsed.name}\nDoctor: ${parsed.doctor}\nScheduled date: ${parsed.appointment_date}`);
+        }
+      } else if (data.trim() == 'OK') {
         thisForm.querySelector('.sent-message').classList.add('d-block');
         thisForm.reset(); 
+        if (thisForm.id === 'contact-form') {
+          alert('Thank you! Your message has been submitted.');
+        }
       } else {
-        throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
+        const errMsg = parsed && parsed.message ? parsed.message : data;
+        throw new Error(errMsg ? errMsg : 'Form submission failed and no error message returned from: ' + action); 
       }
     })
     .catch((error) => {

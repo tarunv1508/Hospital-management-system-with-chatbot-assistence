@@ -3,10 +3,25 @@ from flask_cors import CORS
 from datetime import datetime, timedelta
 import re
 import json
+import mysql.connector
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'healthcare_chatbot_secret_key_2024'
+
+DB_CONFIG = {
+    "host": "localhost",
+    "user": "root",
+    "password": "varma1508",
+    "database": "hospital_contact",
+}
+
+def get_db_connection():
+    try:
+        return mysql.connector.connect(**DB_CONFIG)
+    except mysql.connector.Error as err:
+        app.logger.error(f"DB connection failed: {err}")
+        return None
 
 # Doctor roster and symptom mapping - Comprehensive dataset
 DOCTORS = {
@@ -540,6 +555,88 @@ def chat():
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok", "service": "Healthcare Chatbot Backend"})
+
+
+@app.route("/contact", methods=["POST"])
+def contact_submit():
+    form = request.form
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    subject = (form.get("subject") or "").strip()
+    message = (form.get("message") or "").strip()
+
+    if not all([name, email, subject, message]):
+        return "All fields are required.", 400
+
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return "Email is invalid.", 400
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return "Unable to connect to the database.", 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO contact_messages (name, email, subject, message) VALUES (%s, %s, %s, %s)",
+            (name, email, subject, message)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return "OK", 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Contact insert failed: {err}")
+        return f"Database error: {err}", 500
+
+
+@app.route("/appointment", methods=["POST"])
+def appointment_submit():
+    form = request.form
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    phone = (form.get("phone") or "").strip()
+    department = (form.get("department") or "").strip()
+    doctor = (form.get("doctor") or "").strip()
+    appointment_date = (form.get("date") or "").strip()
+    notes = (form.get("message") or "").strip()
+
+    if not all([name, email, phone, department, doctor, appointment_date]):
+        return jsonify({"status": "ERROR", "message": "All required fields must be filled."}), 400
+
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return jsonify({"status": "ERROR", "message": "Email is invalid."}), 400
+
+    try:
+        scheduled_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"status": "ERROR", "message": "Invalid appointment date."}), 400
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO appointment_requests (name, email, phone, department, doctor, appointment_date, notes) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (name, email, phone, department, doctor, scheduled_date, notes)
+        )
+        conn.commit()
+        appointment_id = cursor.lastrowid
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            "status": "OK",
+            "appointment_id": appointment_id,
+            "name": name,
+            "doctor": doctor,
+            "appointment_date": scheduled_date.strftime("%Y-%m-%d")
+        }), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Appointment insert failed: {err}")
+        return jsonify({"status": "ERROR", "message": f"Database error: {err}"}), 500
 
 
 # Serve the web app pages and assets directly for easy local testing

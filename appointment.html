@@ -175,7 +175,7 @@
               </div>
 
               <div class="appointment-form" data-aos="fade-up" data-aos-delay="400">
-                <form action="forms/book-appointment.php" method="post" class="php-email-form">
+                <form id="appointment-form" action="/appointment" method="post" class="php-email-form">
                   <div class="row gy-4">
                     <div class="col-md-6">
                       <input type="text" name="name" class="form-control" placeholder="Full Name" required="">
@@ -187,17 +187,17 @@
                       <input type="tel" name="phone" class="form-control" placeholder="Phone Number" required="">
                     </div>
                     <div class="col-md-6">
-                      <select name="department" class="form-select" id="departmentSelect" required="">
+                      <select id="departmentSelect" name="department" class="form-select" required="">
                         <option value="">Select Department</option>
                         <option value="general">General Consultation</option>
                         <option value="cardiology">Cardiology</option>
                         <option value="neurology">Neurology</option>
-                        <option value="orthopedics">Orthopedics</option>
                         <option value="pediatrics">Pediatrics</option>
+                        <option value="orthopedics">Orthopedics</option>
                         <option value="dermatology">Dermatology</option>
                         <option value="oncology">Oncology</option>
                         <option value="general_medicine">General Medicine</option>
-                        <option value="ent">ENT (Ear, Nose, Throat)</option>
+                        <option value="ent">ENT</option>
                         <option value="gastroenterology">Gastroenterology</option>
                         <option value="nephrology">Nephrology</option>
                         <option value="urology">Urology</option>
@@ -211,73 +211,53 @@
                       <input type="date" name="date" class="form-control" required="">
                     </div>
                     <div class="col-md-6">
-                      <select name="doctor" class="form-select" id="doctorSelect" required="">
+                      <select id="doctorSelect" name="doctor" class="form-select" required="">
                         <option value="">Select Doctor</option>
-                        <!-- Cardiology -->
                         <option value="DR.S.Arjun Reddy" data-department="cardiology">DR.S.Arjun Reddy - Cardiology</option>
                         <option value="DR.Rajesh Kumar" data-department="cardiology">DR.Rajesh Kumar - Cardiology</option>
                         <option value="DR.Vikram Singh" data-department="cardiology">DR.Vikram Singh - Cardiology</option>
-                        <!-- Neurology -->
                         <option value="DR.S.SaiPriya" data-department="neurology">DR.S.SaiPriya - Neurology</option>
                         <option value="DR.T.Anu" data-department="neurology">DR.T.Anu - Neurology</option>
                         <option value="DR.Neha Sharma" data-department="neurology">DR.Neha Sharma - Neurology</option>
-                        <!-- Pediatrics -->
                         <option value="DR.N.MadhuLatha" data-department="pediatrics">DR.N.MadhuLatha - Pediatrics</option>
                         <option value="DR.Priya Verma" data-department="pediatrics">DR.Priya Verma - Pediatrics</option>
                         <option value="DR.Arun Nair" data-department="pediatrics">DR.Arun Nair - Pediatrics</option>
-                        <!-- Orthopedics -->
                         <option value="DR.M.Sameer" data-department="orthopedics">DR.M.Sameer - Orthopedics</option>
                         <option value="DR.Ravi Patel" data-department="orthopedics">DR.Ravi Patel - Orthopedics</option>
                         <option value="DR.Suresh Gupta" data-department="orthopedics">DR.Suresh Gupta - Orthopedics</option>
-                        <!-- Dermatology -->
                         <option value="DR.N.lohith" data-department="dermatology">DR.N.lohith - Dermatology</option>
                         <option value="DR.Anjali Singh" data-department="dermatology">DR.Anjali Singh - Dermatology</option>
                         <option value="DR.Meera Joshi" data-department="dermatology">DR.Meera Joshi - Dermatology</option>
-                        <!-- Oncology -->
+                        <option value="DR.T.Anu" data-department="oncology">DR.T.Anu - Oncology</option>
                         <option value="DR.Ashok Kumar" data-department="oncology">DR.Ashok Kumar - Oncology</option>
                         <option value="DR.Sneha Desai" data-department="oncology">DR.Sneha Desai - Oncology</option>
-                        <!-- General Medicine -->
                         <option value="DR.Ramesh Kumar" data-department="general_medicine">DR.Ramesh Kumar - General Medicine</option>
                         <option value="DR.Pooja Menon" data-department="general_medicine">DR.Pooja Menon - General Medicine</option>
-                        <!-- ENT -->
+                        <option value="DR.S.Arjun Reddy" data-department="general_medicine">DR.S.Arjun Reddy - General Medicine</option>
                         <option value="DR.Vikram Sharma" data-department="ent">DR.Vikram Sharma - ENT</option>
                         <option value="DR.Anand Gupta" data-department="ent">DR.Anand Gupta - ENT</option>
                         <option value="DR.Shruti Patel" data-department="ent">DR.Shruti Patel - ENT</option>
-                        <!-- Gastroenterology -->
                         <option value="DR.Rohit Verma" data-department="gastroenterology">DR.Rohit Verma - Gastroenterology</option>
                         <option value="DR.Priya Singh" data-department="gastroenterology">DR.Priya Singh - Gastroenterology</option>
                         <option value="DR.Aditya Sengupta" data-department="gastroenterology">DR.Aditya Sengupta - Gastroenterology</option>
-                        <!-- Nephrology -->
                         <option value="DR.Sanjay Kumar" data-department="nephrology">DR.Sanjay Kumar - Nephrology</option>
                         <option value="DR.Meera Nair" data-department="nephrology">DR.Meera Nair - Nephrology</option>
                         <option value="DR.Rajiv Desai" data-department="nephrology">DR.Rajiv Desai - Nephrology</option>
-                        <!-- Urology -->
                         <option value="DR.Harsh Patel" data-department="urology">DR.Harsh Patel - Urology</option>
                         <option value="DR.Vikas Sharma" data-department="urology">DR.Vikas Sharma - Urology</option>
                         <option value="DR.Amit Singh" data-department="urology">DR.Amit Singh - Urology</option>
-                        <!-- Pulmonology -->
                         <option value="DR.Deepak Verma" data-department="pulmonology">DR.Deepak Verma - Pulmonology</option>
                         <option value="DR.Sneha Kumar" data-department="pulmonology">DR.Sneha Kumar - Pulmonology</option>
                         <option value="DR.Arjun Sharma" data-department="pulmonology">DR.Arjun Sharma - Pulmonology</option>
-                        <!-- Endocrinology -->
                         <option value="DR.Divya Singh" data-department="endocrinology">DR.Divya Singh - Endocrinology</option>
                         <option value="DR.Ashok Nair" data-department="endocrinology">DR.Ashok Nair - Endocrinology</option>
                         <option value="DR.Priya Gupta" data-department="endocrinology">DR.Priya Gupta - Endocrinology</option>
-                        <!-- Gynecology -->
                         <option value="DR.Ragini Sharma" data-department="gynecology">DR.Ragini Sharma - Gynecology</option>
                         <option value="DR.Neha Verma" data-department="gynecology">DR.Neha Verma - Gynecology</option>
                         <option value="DR.Anjali Patel" data-department="gynecology">DR.Anjali Patel - Gynecology</option>
-                        <!-- Psychiatry -->
                         <option value="DR.Ramesh Singh" data-department="psychiatry">DR.Ramesh Singh - Psychiatry</option>
                         <option value="DR.Anjali Kumar" data-department="psychiatry">DR.Anjali Kumar - Psychiatry</option>
                         <option value="DR.Vikram Desai" data-department="psychiatry">DR.Vikram Desai - Psychiatry</option>
-                        <!-- General -->
-                        <option value="DR.S.Arjun Reddy" data-department="general">DR.S.Arjun Reddy - General</option>
-                        <option value="DR.Ramesh Kumar" data-department="general">DR.Ramesh Kumar - General</option>
-                        <option value="DR.Pooja Menon" data-department="general">DR.Pooja Menon - General</option>
-                        <option value="DR.Vikram Singh" data-department="general">DR.Vikram Singh - General</option>
-                        <option value="DR.S.SaiPriya" data-department="general">DR.S.SaiPriya - General</option>
-                        <option value="DR.N.MadhuLatha" data-department="general">DR.N.MadhuLatha - General</option>
                       </select>
                     </div>
                     <div class="col-12">
@@ -456,42 +436,37 @@
 
   <!-- Main JS File -->
   <script src="assets/js/main.js"></script>
-
-  <!-- Department-Doctor Filter Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const departmentSelect = document.getElementById('departmentSelect');
       const doctorSelect = document.getElementById('doctorSelect');
 
-      if (departmentSelect && doctorSelect) {
-        departmentSelect.addEventListener('change', function() {
-          const selectedDept = this.value;
-          const allOptions = doctorSelect.querySelectorAll('option');
+      if (!departmentSelect || !doctorSelect) {
+        return;
+      }
 
-          // Show/hide doctor options based on selected department
-          allOptions.forEach(option => {
-            if (option.value === '') {
-              option.style.display = 'block'; // Always show the placeholder
-            } else if (selectedDept === '') {
-              option.style.display = 'none'; // Hide all when no department selected
-            } else {
-              const optionDept = option.getAttribute('data-department');
-              option.style.display = (optionDept === selectedDept) ? 'block' : 'none';
-            }
-          });
+      const doctorOptions = Array.from(doctorSelect.querySelectorAll('option'));
 
-          // Reset doctor selection
-          doctorSelect.value = '';
-        });
+      function updateDoctorOptions() {
+        const selectedDept = departmentSelect.value;
+        doctorSelect.value = '';
 
-        // Initialize: hide all doctors on page load
-        const allOptions = doctorSelect.querySelectorAll('option');
-        allOptions.forEach(option => {
-          if (option.value !== '') {
-            option.style.display = 'none';
+        doctorOptions.forEach(option => {
+          if (!option.value) {
+            option.hidden = false;
+            option.disabled = false;
+            return;
           }
+
+          const optionDept = option.getAttribute('data-department');
+          const show = selectedDept !== '' && optionDept === selectedDept;
+          option.hidden = !show;
+          option.disabled = !show;
         });
       }
+
+      departmentSelect.addEventListener('change', updateDoctorOptions);
+      updateDoctorOptions();
     });
   </script>
 
