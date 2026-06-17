@@ -4,10 +4,17 @@ from datetime import datetime, timedelta
 import re
 import json
 import mysql.connector
+import logging
 
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'healthcare_chatbot_secret_key_2024'
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+HOSPITAL_PHONE = "+919866208819"
 
 DB_CONFIG = {
     "host": "localhost",
@@ -632,7 +639,11 @@ def appointment_submit():
             "appointment_id": appointment_id,
             "name": name,
             "doctor": doctor,
-            "appointment_date": scheduled_date.strftime("%Y-%m-%d")
+            "department": department,
+            "appointment_date": scheduled_date.strftime("%Y-%m-%d"),
+            "email": email,
+            "phone": phone,
+            "message": "Appointment confirmed!"
         }), 200
     except mysql.connector.Error as err:
         app.logger.error(f"Appointment insert failed: {err}")
