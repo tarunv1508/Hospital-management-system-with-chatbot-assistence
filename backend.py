@@ -1,10 +1,14 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from datetime import datetime, timedelta
+import os
 import re
 import json
+import ssl
 import mysql.connector
 import logging
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 CORS(app)
@@ -16,6 +20,28 @@ logger = logging.getLogger(__name__)
 
 HOSPITAL_PHONE = "+919866208819"
 
+
+def load_env_file(path=".env"):
+    if not os.path.exists(path):
+        return
+
+    app.logger.info(f"Loading environment variables from {path}")
+    with open(path, "r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+load_env_file()
+
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
@@ -23,12 +49,75 @@ DB_CONFIG = {
     "database": "hospital_contact",
 }
 
+SMTP_USER = os.getenv("SMTP_USER") or os.getenv("EMAIL_ADDRESS")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("EMAIL_PASSWORD")
+SMTP_FROM_ADDRESS = os.getenv("SMTP_FROM_ADDRESS") or (f"PrimeLife Hospital <{SMTP_USER}>")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL") or SMTP_USER
+
+SMTP_CONFIG = {
+    "host": os.getenv("SMTP_HOST", "smtp.gmail.com"),
+    "port": int(os.getenv("SMTP_PORT", "587")),
+    "user": SMTP_USER,
+    "password": SMTP_PASSWORD,
+    "from_address": SMTP_FROM_ADDRESS,
+    "from_email": SMTP_FROM_EMAIL,
+}
+
+if not SMTP_CONFIG["user"] or not SMTP_CONFIG["password"]:
+    app.logger.warning(
+        "SMTP credentials are not configured. Set SMTP_USER/EMAIL_ADDRESS and SMTP_PASSWORD/EMAIL_PASSWORD environment variables."
+    )
+
+if not SMTP_CONFIG["from_address"]:
+    SMTP_CONFIG["from_address"] = f"PrimeLife Hospital <{SMTP_CONFIG['user']}>"
+
 def get_db_connection():
     try:
         return mysql.connector.connect(**DB_CONFIG)
     except mysql.connector.Error as err:
         app.logger.error(f"DB connection failed: {err}")
         return None
+
+
+def send_appointment_confirmation_email(to_email, appointment_data):
+    subject = "PrimeLife Hospital Appointment Confirmation"
+    body = (
+        f"Dear {appointment_data['name']},\n\n"
+        f"Your appointment has been confirmed with PrimeLife Hospital. Here are the details:\n\n"
+        f"Appointment ID: {appointment_data['appointment_id']}\n"
+        f"Department: {appointment_data['department']}\n"
+        f"Doctor: {appointment_data['doctor']}\n"
+        f"Date: {appointment_data['appointment_date']}\n"
+        f"Phone: {appointment_data['phone']}\n"
+        f"Notes: {appointment_data['notes'] or 'N/A'}\n\n"
+        "Please arrive 15 minutes before your scheduled time. If you need to reschedule, reply to this email or call us at "
+        f"{HOSPITAL_PHONE}.\n\n"
+        "Thank you for choosing PrimeLife Hospital.\n"
+        "Best regards,\n"
+        "PrimeLife Hospital Team"
+    )
+
+    if not SMTP_CONFIG["user"] or not SMTP_CONFIG["password"]:
+        raise ValueError(
+            "SMTP credentials are missing. Set SMTP_USER/EMAIL_ADDRESS and SMTP_PASSWORD/EMAIL_PASSWORD."
+        )
+
+    message = MIMEText(body)
+    message["Subject"] = subject
+    message["From"] = SMTP_CONFIG["from_address"]
+    message["To"] = to_email
+    envelope_from = SMTP_CONFIG["from_email"] or SMTP_CONFIG["user"]
+
+    context = ssl.create_default_context()
+    app.logger.info(f"Connecting to SMTP server {SMTP_CONFIG['host']}:{SMTP_CONFIG['port']} as {SMTP_CONFIG['user']}")
+
+    with smtplib.SMTP(SMTP_CONFIG["host"], SMTP_CONFIG["port"]) as server:
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
+        server.login(SMTP_CONFIG["user"], SMTP_CONFIG["password"])
+        server.sendmail(envelope_from, [to_email], message.as_string())
+        app.logger.info(f"Appointment confirmation email sent to {to_email}")
 
 # Doctor roster and symptom mapping - Comprehensive dataset
 DOCTORS = {
@@ -648,9 +737,10 @@ def appointment_submit():
     department = (form.get("department") or "").strip()
     doctor = (form.get("doctor") or "").strip()
     appointment_date = (form.get("date") or "").strip()
+    appointment_time = (form.get("time") or "").strip()
     notes = (form.get("message") or "").strip()
 
-    if not all([name, email, phone, department, doctor, appointment_date]):
+    if not all([name, email, phone, department, doctor, appointment_date, appointment_time]):
         return jsonify({"status": "ERROR", "message": "All required fields must be filled."}), 400
 
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
@@ -661,6 +751,11 @@ def appointment_submit():
     except ValueError:
         return jsonify({"status": "ERROR", "message": "Invalid appointment date."}), 400
 
+    try:
+        scheduled_time = datetime.strptime(appointment_time, "%H:%M").time()
+    except ValueError:
+        return jsonify({"status": "ERROR", "message": "Invalid appointment time."}), 400
+
     conn = get_db_connection()
     if not conn or not conn.is_connected():
         return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
@@ -668,13 +763,34 @@ def appointment_submit():
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO appointment_requests (name, email, phone, department, doctor, appointment_date, notes) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (name, email, phone, department, doctor, scheduled_date, notes)
+            "INSERT INTO appointment_requests (name, email, phone, department, doctor, appointment_date, appointment_time, notes) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            (name, email, phone, department, doctor, scheduled_date, scheduled_time, notes)
         )
         conn.commit()
         appointment_id = cursor.lastrowid
         cursor.close()
         conn.close()
+
+        appointment_data = {
+            "appointment_id": appointment_id,
+            "name": name,
+            "doctor": doctor,
+            "department": department,
+            "appointment_date": scheduled_date.strftime("%Y-%m-%d"),
+            "appointment_time": scheduled_time.strftime("%H:%M"),
+            "email": email,
+            "phone": phone,
+            "notes": notes,
+        }
+
+        try:
+            send_appointment_confirmation_email(email, appointment_data)
+        except Exception as err:
+            app.logger.error(f"Failed to send appointment email: {err}")
+            return jsonify({
+                "status": "ERROR",
+                "message": "Appointment saved, but email could not be sent. Please contact support."
+            }), 500
 
         return jsonify({
             "status": "OK",
@@ -683,6 +799,7 @@ def appointment_submit():
             "doctor": doctor,
             "department": department,
             "appointment_date": scheduled_date.strftime("%Y-%m-%d"),
+            "appointment_time": scheduled_time.strftime("%H:%M"),
             "email": email,
             "phone": phone,
             "message": "Appointment confirmed!"
@@ -708,8 +825,15 @@ def serve_web(path):
         # if file doesn't exist, fallback to chatbot page
         fullpath = os.path.join(static_root, path)
         if not os.path.exists(fullpath):
-            return send_from_directory(static_root, "chatbot.html")
-        return send_from_directory(static_root, path)
+            resp = send_from_directory(static_root, "chatbot.html")
+        else:
+            resp = send_from_directory(static_root, path)
+
+        # During development, instruct browsers not to cache static files
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
     except Exception:
         return jsonify({"error": "unable to serve static file"}), 500
 

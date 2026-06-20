@@ -205,6 +205,25 @@
                       <input type="date" name="date" class="form-control" required="">
                     </div>
                     <div class="col-md-6">
+                      <select id="timeSelect" name="time" class="form-select" required="">
+                        <option value="">Select Time Slot</option>
+                        <option value="09:00">09:00 AM</option>
+                        <option value="09:30">09:30 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="10:30">10:30 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="11:30">11:30 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="14:00">02:00 PM</option>
+                        <option value="14:30">02:30 PM</option>
+                        <option value="15:00">03:00 PM</option>
+                        <option value="15:30">03:30 PM</option>
+                        <option value="16:00">04:00 PM</option>
+                        <option value="16:30">04:30 PM</option>
+                        <option value="17:00">05:00 PM</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
                       <select id="doctorSelect" name="doctor" class="form-select" required="">
                         <option value="">Select Doctor</option>
                         <option value="DR.S.Arjun Reddy" data-department="cardiology">DR.S.Arjun Reddy - Cardiology</option>
@@ -547,40 +566,48 @@
         .then(data => {
           loading.classList.add('d-none');
 
-          if (data.status === 'OK') {
+          // Treat as success when backend indicates OK or returns an appointment_id
+          if (data && (data.status === 'OK' || data.appointment_id)) {
             const confirmationDetails = document.getElementById('confirmation-details');
-            const appointmentDate = new Date(data.appointment_date + 'T00:00:00');
-            const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+            const appointmentDate = data.appointment_date ? new Date(data.appointment_date + 'T00:00:00') : null;
+            const formattedDate = appointmentDate ? appointmentDate.toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
               day: 'numeric' 
-            });
+            }) : 'Not specified';
 
-            const deptDisplay = data.department.replace('_', ' ').charAt(0).toUpperCase() + data.department.replace('_', ' ').slice(1);
+            const deptDisplay = data.department ? data.department.replace('_', ' ').charAt(0).toUpperCase() + data.department.replace('_', ' ').slice(1) : 'Not specified';
+            const formattedTime = data.appointment_time ? data.appointment_time : 'Not specified';
 
             confirmationDetails.innerHTML = `
-              <p><strong>Appointment ID:</strong> #${data.appointment_id}</p>
-              <p><strong>Patient Name:</strong> ${data.name}</p>
-              <p><strong>Doctor:</strong> ${data.doctor}</p>
+              <p><strong>Appointment ID:</strong> #${data.appointment_id || 'N/A'}</p>
+              <p><strong>Patient Name:</strong> ${data.name || ''}</p>
+              <p><strong>Doctor:</strong> ${data.doctor || ''}</p>
               <p><strong>Department:</strong> ${deptDisplay}</p>
               <p><strong>Appointment Date:</strong> ${formattedDate}</p>
-              <p><strong>Email:</strong> ${data.email}</p>
-              <p><strong>Phone:</strong> ${data.phone}</p>
-              <hr/>
-              <p style="margin-top: 15px; font-size: 13px; color: #666;">
-                Please arrive 15 minutes before your appointment time. For any queries, call us at <strong>9866208819</strong>.
-              </p>
+              <p><strong>Appointment Time:</strong> ${formattedTime}</p>
             `;
 
+            // Show success message area
             sentMsg.classList.remove('d-none');
-            appointmentForm.reset();
-            departmentSelect.value = '';
+            sentMsg.scrollIntoView({ behavior: 'smooth' });
+
+            // If backend returned a warning message (e.g., email failed), show it as an info below confirmation
+            if (data.status && data.status !== 'OK' && data.message) {
+              const warnDiv = document.createElement('div');
+              warnDiv.className = 'alert alert-warning mt-3';
+              warnDiv.textContent = data.message;
+              confirmationDetails.appendChild(warnDiv);
+            }
+
+            // Reset doctor selection and form fields for convenience
             doctorSelect.value = '';
             updateDoctorOptions();
+            appointmentForm.reset();
 
           } else {
-            errorMsg.textContent = data.message || 'An error occurred. Please try again.';
+            errorMsg.textContent = (data && data.message) ? data.message : 'An error occurred. Please try again.';
             errorMsg.classList.remove('d-none');
           }
 
