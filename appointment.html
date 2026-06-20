@@ -169,7 +169,7 @@
               </div>
 
               <div class="appointment-form" data-aos="fade-up" data-aos-delay="400">
-                <form id="appointment-form" action="/appointment" method="post" class="php-email-form">
+                <form id="appointment-form" action="/appointment" method="post" class="appointment-form">
                   <div class="row gy-4">
                     <div class="col-md-6">
                       <input type="text" name="name" class="form-control" placeholder="Full Name" required="">
@@ -436,6 +436,9 @@
 
   <!-- Main JS File -->
   <script src="assets/js/main.js"></script>
+
+  <!-- Appointment Auto-fill Script -->
+  <script src="assets/js/appointment-autofill.js"></script>
   
   <style>
     .btn-book {
@@ -520,16 +523,25 @@
         // Show loading, hide others
         loading.classList.remove('d-none');
         errorMsg.classList.add('d-none');
+        errorMsg.textContent = '';
         sentMsg.classList.add('d-none');
         submitBtn.disabled = true;
 
         // Collect form data
         const formData = new FormData(appointmentForm);
 
+        const apiBase = window.location.origin && window.location.origin !== 'null'
+          ? window.location.origin
+          : 'http://localhost:5000';
+        const endpoint = `${apiBase}/appointment`;
+
         // Send to backend
-        fetch('/appointment', {
+        fetch(endpoint, {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
         })
         .then(response => response.json())
         .then(data => {

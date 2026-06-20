@@ -209,19 +209,30 @@ from collections import defaultdict
 
 
 def normalize_text(text: str) -> str:
-    return re.sub(r"[^a-z0-9 ]", "", text.lower())
+    normalized = re.sub(r"[^a-z0-9 ]", " ", text.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
 
 
 def identify_department_scores(symptoms_text: str) -> dict:
     text = normalize_text(symptoms_text)
     scores = defaultdict(int)
 
-    for keyword, dept in SYMPTOM_KEYWORDS.items():
-        if keyword in text:
-            scores[dept] += 1
+    # Match longer phrases first to reduce generic fallback matches.
+    for keyword in sorted(SYMPTOM_KEYWORDS.keys(), key=lambda k: -len(k)):
+        pattern = r"\b" + re.escape(keyword) + r"\b"
+        if re.search(pattern, text):
+            dept = SYMPTOM_KEYWORDS[keyword]
+            scores[dept] += 2 if len(keyword.split()) > 1 else 1
+
+    # Boost departments when the user mentions a known disease or condition name.
+    for disease, dept in DISEASE_MAPPING.items():
+        pattern = r"\b" + re.escape(disease) + r"\b"
+        if re.search(pattern, text):
+            scores[dept] += 3
 
     if not scores:
-        # Fallback: match partial symptom tokens to common departments for everyday language.
+        # Fallback: match partial symptom tokens to common departments.
         tokens = set(text.split())
         fallback_tokens = {
             "head": "neurology",
@@ -235,13 +246,29 @@ def identify_department_scores(symptoms_text: str) -> dict:
             "sick": "general_medicine",
             "nausea": "general_medicine",
             "fever": "general_medicine",
+            "weakness": "general_medicine",
+            "fatigue": "general_medicine",
+            "vomit": "general_medicine",
             "pain": "general_medicine",
             "blood": "gastroenterology",
             "stool": "gastroenterology",
-            "vomit": "general_medicine",
             "vomiting": "general_medicine",
             "bloating": "gastroenterology",
             "bloated": "gastroenterology",
+            "cough": "pulmonology",
+            "breath": "pulmonology",
+            "breathing": "pulmonology",
+            "joint": "orthopedics",
+            "bone": "orthopedics",
+            "skin": "dermatology",
+            "rash": "dermatology",
+            "swelling": "orthopedics",
+            "kidney": "nephrology",
+            "urine": "urology",
+            "menstrual": "gynecology",
+            "pregnancy": "gynecology",
+            "anxiety": "psychiatry",
+            "depression": "psychiatry",
         }
         for token, dept in fallback_tokens.items():
             if token in tokens:
@@ -322,6 +349,10 @@ def pick_best_department(scores: dict) -> str:
 def get_doctors_for_department(dept: str) -> list:
     """Get all doctors for a given department"""
     return DOCTORS.get(dept, DOCTORS.get("general", []))
+
+
+def build_doctor_entries(department: str, doctor_names: list) -> list:
+    return [{"name": name, "department": department} for name in doctor_names]
 
 def rank_doctors(primary_dept: str, all_depts: list, symptom_text: str) -> dict:
     """Rank all matching doctors from primary and secondary departments"""
@@ -504,13 +535,17 @@ def chat():
     
     # Get doctors
     doctors_ranked = rank_doctors(primary_department, matching_departments, user_message)
-    primary_doctors = get_doctors_for_department(primary_department)
+    primary_doctors = build_doctor_entries(primary_department, get_doctors_for_department(primary_department))
     all_alternative_doctors = []
-    
+    alternative_names = set([doc['name'] for doc in primary_doctors])
+
     # Collect alternative doctors from secondary departments
     for dept in matching_departments[1:4]:  # Get up to 3 alternative departments
         dept_doctors = get_doctors_for_department(dept)
-        all_alternative_doctors.extend(dept_doctors[:2])  # Top 2 from each dept
+        for doc in dept_doctors[:2]:
+            if doc not in alternative_names:
+                all_alternative_doctors.append({"name": doc, "department": dept})
+                alternative_names.add(doc)
     
     # Generate intelligent response
     disease_info = generate_disease_info(primary_department)
@@ -527,10 +562,11 @@ def chat():
     
     dept_name = primary_department.replace("_", " ").title()
     
-    if len(primary_doctors) > 1:
-        doctors_str = f"{', '.join(primary_doctors[:-1])} or {primary_doctors[-1]}"
+    primary_doctor_names = [doc['name'] for doc in primary_doctors]
+    if len(primary_doctor_names) > 1:
+        doctors_str = f"{', '.join(primary_doctor_names[:-1])} or {primary_doctor_names[-1]}"
     else:
-        doctors_str = primary_doctors[0] if primary_doctors else "our specialist"
+        doctors_str = primary_doctor_names[0] if primary_doctor_names else "our specialist"
     
     reply = (
         f"Based on {symptoms_str} {severity_str}I recommend a **{dept_name}** specialist. "
@@ -538,7 +574,7 @@ def chat():
     )
     
     if all_alternative_doctors:
-        alt_str = ", ".join(all_alternative_doctors[:3])
+        alt_str = ", ".join([doc['name'] for doc in all_alternative_doctors[:3]])
         reply += f"\n\nAlternative specialists: {alt_str}"
     
     reply += (
@@ -555,6 +591,12 @@ def chat():
         "symptoms_found": key_symptoms,
         "severity": severity,
         "follow_up_questions": followup_questions[:2],
+        "suggestions": [
+            "I have chest pain and dizziness",
+            "I need help with stomach pain",
+            "I feel anxious and cannot sleep",
+            "I have a skin rash and itching"
+        ],
         "next_action": "Would you like me to ask follow-up questions or help you book an appointment?"
     }), 200
 

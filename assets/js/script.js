@@ -114,9 +114,9 @@ function displayBotResponse(chatbox, data) {
     
     data.primary_doctors.forEach(doc => {
       responseHtml += `<div class="doctor-card">
-        <div class="doctor-name">👨‍⚕️ ${escapeHtml(doc)}</div>
-        <div class="doctor-spec">${escapeHtml(data.primary_department.replace('_', ' ').toUpperCase())}</div>
-        <button class="btn btn-sm btn-primary book-btn" onclick="bookAppointment('${escapeHtml(doc)}', '${escapeHtml(data.primary_department)}')">
+        <div class="doctor-name">👨‍⚕️ ${escapeHtml(doc.name)}</div>
+        <div class="doctor-spec">${escapeHtml(doc.department.replace('_', ' ').toUpperCase())}</div>
+        <button class="btn btn-sm btn-primary book-btn" onclick="bookAppointment('${escapeHtml(doc.name)}', '${escapeHtml(doc.department)}')">
           Book Appointment
         </button>
       </div>`;
@@ -133,8 +133,9 @@ function displayBotResponse(chatbox, data) {
     
     data.alternative_doctors.forEach(doc => {
       responseHtml += `<div class="alt-doctor">
-        <span class="doctor-name">${escapeHtml(doc)}</span>
-        <button class="btn btn-sm btn-outline-primary" onclick="bookAppointment('${escapeHtml(doc)}', 'general')">
+        <span class="doctor-name">${escapeHtml(doc.name)}</span>
+        <span class="doctor-spec">${escapeHtml(doc.department.replace('_', ' ').toUpperCase())}</span>
+        <button class="btn btn-sm btn-outline-primary" onclick="bookAppointment('${escapeHtml(doc.name)}', '${escapeHtml(doc.department)}')">
           Book
         </button>
       </div>`;
@@ -163,6 +164,15 @@ function displayBotResponse(chatbox, data) {
     </div>`;
   }
 
+  if (data.suggestions && data.suggestions.length > 0) {
+    responseHtml += `<div class="suggestions-section">
+      <strong>Try asking:</strong>
+      <div class="suggestions-list">
+        ${data.suggestions.map(s => `<button class="suggestion-btn" onclick="sendMessage('${escapeHtml(s)}')">${escapeHtml(s)}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
   responseHtml += `</div></div>`;
 
   chatbox.innerHTML += responseHtml;
@@ -187,12 +197,16 @@ function escapeHtml(unsafe) {
 }
 
 function bookAppointment(doctor, department) {
-  // Store the selected doctor and department in localStorage
+  const encodedDoctor = encodeURIComponent(doctor);
+  const encodedDepartment = encodeURIComponent(department);
+  const url = `appointment.html?department=${encodedDepartment}&doctor=${encodedDoctor}`;
+
+  // Store the selected doctor and department in localStorage as a fallback
   localStorage.setItem('selectedDoctor', doctor);
   localStorage.setItem('selectedDepartment', department);
   
-  // Redirect to appointment page
-  window.location.href = 'appointment.html';
+  // Redirect to appointment page with auto-fill parameters
+  window.location.href = url;
 }
 
 function sendSuggestion(suggestion) {
