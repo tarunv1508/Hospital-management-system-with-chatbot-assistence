@@ -595,3 +595,37 @@
     background: #2a2a2a;
   }
 }
+
+/* Admin dashboard styles */
+.admin-card .card-body {
+  padding: 2rem;
+}
+
+#admin-dashboard {
+  margin-top: 2rem;
+}
+
+.stats-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 1rem;
+}
+
+.department-card {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.department-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
+#doctor-appointments-card {
+  transition: opacity 0.3s ease;
+}
+
+#doctor-appointments-card.d-none {
+  opacity: 0;
+}

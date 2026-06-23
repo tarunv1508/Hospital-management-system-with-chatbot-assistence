@@ -1,10 +1,13 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, make_response, redirect, send_from_directory
 from flask_cors import CORS
 from datetime import datetime, timedelta
+from typing import Optional
 import os
 import re
 import json
 import ssl
+import bcrypt
+import jwt
 import mysql.connector
 import logging
 import smtplib
@@ -12,7 +15,10 @@ from email.mime.text import MIMEText
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = 'healthcare_chatbot_secret_key_2024'
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'healthcare_chatbot_secret_key_2024')
+JWT_SECRET = os.getenv('JWT_SECRET', 'healthcare_jwt_secret_2024')
+JWT_ALGORITHM = 'HS256'
+JWT_EXPIRATION_SECONDS = 3600
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +76,100 @@ if not SMTP_CONFIG["user"] or not SMTP_CONFIG["password"]:
 
 if not SMTP_CONFIG["from_address"]:
     SMTP_CONFIG["from_address"] = f"PrimeLife Hospital <{SMTP_CONFIG['user']}>"
+
+
+def hash_password(password: str) -> bytes:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
+
+def _format_sql_date(value):
+    if value is None:
+        return None
+    try:
+        return value.strftime("%Y-%m-%d")
+    except Exception:
+        try:
+            return str(value)
+        except Exception:
+            return None
+
+
+def _format_sql_time(value):
+    if value is None:
+        return None
+    # MySQL TIME can be returned as datetime.time or datetime.timedelta depending on connector
+    try:
+        # datetime.time and datetime.datetime have strftime
+        return value.strftime("%H:%M")
+    except Exception:
+        pass
+    if isinstance(value, timedelta):
+        total = int(value.total_seconds())
+        hh = (total // 3600) % 24
+        mm = (total % 3600) // 60
+        return f"{hh:02d}:{mm:02d}"
+    try:
+        return str(value)
+    except Exception:
+        return None
+
+
+def verify_admin_credentials(username: str, password: str) -> bool:
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        app.logger.error("Unable to connect to DB while verifying admin credentials.")
+        return False
+
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, username, passwordHash FROM Admin WHERE username = %s",
+            (username,)
+        )
+        user = cursor.fetchone()
+        if not user:
+            return False
+        stored_hash = user["passwordHash"].encode("utf-8")
+        return bcrypt.checkpw(password.encode("utf-8"), stored_hash)
+    except mysql.connector.Error as err:
+        app.logger.error(f"Admin login query failed: {err}")
+        return False
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
+def create_jwt_token(admin_id: int, username: str) -> str:
+    payload = {
+        "admin_id": admin_id,
+        "username": username,
+        "exp": datetime.utcnow() + timedelta(seconds=JWT_EXPIRATION_SECONDS),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def verify_jwt_token(token: str) -> Optional[dict]:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
+def admin_required() -> bool:
+    token = request.cookies.get("admin_token")
+    if not token:
+        return False
+    payload = verify_jwt_token(token)
+    if not payload:
+        return False
+    request.admin_payload = payload
+    return True
+
 
 def get_db_connection():
     try:
@@ -761,10 +861,39 @@ def appointment_submit():
         return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
 
     try:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        
+        # Get department
         cursor.execute(
-            "INSERT INTO appointment_requests (name, email, phone, department, doctor, appointment_date, appointment_time, notes) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-            (name, email, phone, department, doctor, scheduled_date, scheduled_time, notes)
+            "SELECT id, name FROM Department WHERE slug = %s",
+            (department,)
+        )
+        department_row = cursor.fetchone()
+        if not department_row:
+            cursor.close()
+            conn.close()
+            return jsonify({"status": "ERROR", "message": "Unknown department selected."}), 400
+
+        department_id = department_row["id"]
+        department_name = department_row["name"]
+
+        # Get doctor
+        cursor.execute(
+            "SELECT id FROM Doctor WHERE name = %s AND departmentId = %s",
+            (doctor, department_id)
+        )
+        doctor_row = cursor.fetchone()
+        if not doctor_row:
+            cursor.close()
+            conn.close()
+            return jsonify({"status": "ERROR", "message": "Selected doctor is not available for this department."}), 400
+
+        doctor_id = doctor_row["id"]
+        
+        # Insert appointment
+        cursor.execute(
+            "INSERT INTO Appointment (doctorId, departmentId, patientName, email, phone, appointment_date, appointment_time, notes, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (doctor_id, department_id, name, email, phone, scheduled_date, scheduled_time, notes, "Pending")
         )
         conn.commit()
         appointment_id = cursor.lastrowid
@@ -775,7 +904,7 @@ def appointment_submit():
             "appointment_id": appointment_id,
             "name": name,
             "doctor": doctor,
-            "department": department,
+            "department": department_name,
             "appointment_date": scheduled_date.strftime("%Y-%m-%d"),
             "appointment_time": scheduled_time.strftime("%H:%M"),
             "email": email,
@@ -809,19 +938,281 @@ def appointment_submit():
         return jsonify({"status": "ERROR", "message": f"Database error: {err}"}), 500
 
 
+@app.route("/api/admin/login", methods=["POST"])
+def admin_login():
+    data = request.get_json(silent=True) or request.form
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+
+    if not username or not password:
+        return jsonify({"status": "ERROR", "message": "Username and password are required."}), 400
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    cursor = None
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, username, passwordHash FROM Admin WHERE username = %s",
+            (username,)
+        )
+        user = cursor.fetchone()
+        if not user:
+            return jsonify({"status": "ERROR", "message": "Invalid admin username or password."}), 401
+
+        if not bcrypt.checkpw(password.encode("utf-8"), user["passwordHash"].encode("utf-8")):
+            return jsonify({"status": "ERROR", "message": "Invalid admin username or password."}), 401
+
+        token = create_jwt_token(user["id"], user["username"])
+        response = jsonify({"status": "OK", "message": "Admin login successful."})
+        response.set_cookie("admin_token", token, httponly=True, samesite="Lax")
+        return response
+    except mysql.connector.Error as err:
+        app.logger.error(f"Admin login query failed: {err}")
+        return jsonify({"status": "ERROR", "message": "Database error."}), 500
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
+@app.route("/api/admin/logout", methods=["POST"])
+def admin_logout():
+    response = jsonify({"status": "OK", "message": "Logged out successfully."})
+    response.set_cookie("admin_token", "", expires=0, httponly=True, samesite="Lax")
+    return response
+
+
+@app.route("/api/admin/summary", methods=["GET"])
+def admin_summary():
+    if not admin_required():
+        return jsonify({"status": "ERROR", "message": "Unauthorized access."}), 401
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT COUNT(*) AS total_appointments FROM Appointment")
+        total_appointments = cursor.fetchone().get("total_appointments", 0) or 0
+
+        cursor.execute("SELECT COUNT(*) AS total_departments FROM Department")
+        total_departments = cursor.fetchone().get("total_departments", 0) or 0
+
+        cursor.execute("SELECT COUNT(DISTINCT name, departmentId) AS total_doctors FROM Doctor")
+        total_doctors = cursor.fetchone().get("total_doctors", 0) or 0
+
+        cursor.execute("SELECT id, name FROM Department ORDER BY name ASC")
+        departments = cursor.fetchall()
+
+        for department in departments:
+            cursor.execute("SELECT COUNT(DISTINCT name, departmentId) AS doctor_count FROM Doctor WHERE departmentId = %s", (department["id"],))
+            department["doctor_count"] = cursor.fetchone().get("doctor_count", 0) or 0
+
+        cursor.close()
+        conn.close()
+        return jsonify({
+            "status": "OK",
+            "summary": {
+                "total_appointments": total_appointments,
+                "total_departments": total_departments,
+                "total_doctors": total_doctors,
+                "departments": departments,
+            },
+        }), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Admin summary failed: {err}")
+        return jsonify({"status": "ERROR", "message": "Database error."}), 500
+
+
+@app.route("/api/departments", methods=["GET"])
+def get_departments():
+    if not admin_required():
+        return jsonify({"status": "ERROR", "message": "Unauthorized access."}), 401
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, name, slug FROM Department")
+        departments = cursor.fetchall()
+
+        for department in departments:
+            cursor.execute("SELECT COUNT(*) AS doctor_count FROM Doctor WHERE departmentId = %s", (department["id"],))
+            count_row = cursor.fetchone()
+            department["doctor_count"] = count_row["doctor_count"] if count_row else 0
+
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "OK", "departments": departments}), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Get departments failed: {err}")
+        return jsonify({"status": "ERROR", "message": "Database error."}), 500
+
+
+@app.route("/api/departments/<int:department_id>/doctors", methods=["GET"])
+def get_department_doctors(department_id):
+    if not admin_required():
+        return jsonify({"status": "ERROR", "message": "Unauthorized access."}), 401
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, name, specialization, photoUrl FROM Doctor WHERE departmentId = %s ORDER BY name ASC",
+            (department_id,)
+        )
+        raw_doctors = cursor.fetchall()
+        doctors = []
+        seen_doctors = set()
+        for doctor in raw_doctors:
+            key = (doctor["name"], department_id)
+            if key in seen_doctors:
+                continue
+            seen_doctors.add(key)
+            doctors.append(doctor)
+
+        doctor_ids = [doctor["id"] for doctor in doctors]
+
+        if doctor_ids:
+            format_strings = ",".join(["%s"] * len(doctor_ids))
+            cursor.execute(
+                f"SELECT doctorId, COUNT(*) AS appointment_count FROM Appointment WHERE doctorId IN ({format_strings}) GROUP BY doctorId",
+                tuple(doctor_ids)
+            )
+            counts = {row["doctorId"]: row["appointment_count"] for row in cursor.fetchall()}
+        else:
+            counts = {}
+
+        for doctor in doctors:
+            doctor["appointment_count"] = counts.get(doctor["id"], 0)
+
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "OK", "doctors": doctors}), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Get department doctors failed: {err}")
+        return jsonify({"status": "ERROR", "message": "Database error."}), 500
+
+
+@app.route("/api/doctors/<int:doctor_id>/appointments", methods=["GET"])
+def get_doctor_appointments(doctor_id):
+    if not admin_required():
+        return jsonify({"status": "ERROR", "message": "Unauthorized access."}), 401
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT a.id, a.patientName, a.email, a.phone, a.notes, a.appointment_date, a.appointment_time, doc.name AS doctor, dep.name AS department "
+            "FROM Appointment a "
+            "JOIN Doctor doc ON a.doctorId = doc.id "
+            "JOIN Department dep ON a.departmentId = dep.id "
+            "WHERE a.doctorId = %s "
+            "ORDER BY a.appointment_date ASC, a.appointment_time ASC",
+            (doctor_id,)
+        )
+        rows = cursor.fetchall()
+        appointments = []
+        for row in rows:
+            appointment_date = row.get("appointment_date")
+            appointment_time = row.get("appointment_time")
+            appointments.append({
+                "id": row.get("id"),
+                "patientName": row.get("patientName"),
+                "email": row.get("email"),
+                "phone": row.get("phone"),
+                "notes": row.get("notes"),
+                "department": row.get("department"),
+                "doctor": row.get("doctor"),
+                "appointment_date": _format_sql_date(appointment_date),
+                "appointment_time": _format_sql_time(appointment_time),
+            })
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "OK", "appointments": appointments}), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Get doctor appointments failed: {err}")
+        return jsonify({"status": "ERROR", "message": "Database error."}), 500
+
+
+@app.route("/admin/doctor-appointments", methods=["GET"])
+def admin_doctor_appointments():
+    if not admin_required():
+        return jsonify({"status": "ERROR", "message": "Unauthorized access."}), 401
+
+    department = (request.args.get("department") or "").strip()
+    doctor = (request.args.get("doctor") or "").strip()
+
+    if not department or not doctor:
+        return jsonify({"status": "ERROR", "message": "Department and doctor are required."}), 400
+
+    conn = get_db_connection()
+    if not conn or not conn.is_connected():
+        return jsonify({"status": "ERROR", "message": "Unable to connect to the database."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT a.id, a.patientName AS name, a.email, a.phone, dep.name AS department, doc.name AS doctor, a.appointment_date, a.appointment_time, a.notes "
+            "FROM Appointment a "
+            "JOIN Doctor doc ON a.doctorId = doc.id "
+            "JOIN Department dep ON a.departmentId = dep.id "
+            "WHERE (dep.slug = %s OR dep.name = %s) AND doc.name = %s "
+            "ORDER BY a.appointment_date ASC, a.appointment_time ASC",
+            (department, department, doctor)
+        )
+        appointments = []
+        for row in cursor:
+            appointment_date = row.get("appointment_date")
+            appointment_time = row.get("appointment_time")
+            appointments.append({
+                "id": row.get("id"),
+                "name": row.get("name"),
+                "email": row.get("email"),
+                "phone": row.get("phone"),
+                "department": row.get("department"),
+                "doctor": row.get("doctor"),
+                "appointment_date": _format_sql_date(appointment_date),
+                "appointment_time": _format_sql_time(appointment_time),
+                "notes": row.get("notes"),
+            })
+
+        cursor.close()
+        conn.close()
+        return jsonify({"status": "OK", "appointments": appointments}), 200
+    except mysql.connector.Error as err:
+        app.logger.error(f"Doctor appointment query failed: {err}")
+        return jsonify({"status": "ERROR", "message": f"Database error: {err}"}), 500
+
+
 # Serve the web app pages and assets directly for easy local testing
 @app.route("/", defaults={"path": "chatbot.html"})
 @app.route("/<path:path>")
 def serve_web(path):
-    # protect API routes
-    if path in ["chat", "health"]:
-        return jsonify({"error": "Not a static path"}), 404
-
     try:
         from flask import send_from_directory
         import os
 
         static_root = os.path.abspath(os.path.dirname(__file__))
+        # protect API routes and admin endpoints
+        first_segment = path.split("/")[0]
+        if first_segment == "admin":
+            return send_from_directory(static_root, "admin.html")
+        if first_segment in ["chat", "health"] and not path.endswith(".html"):
+            return jsonify({"error": "Not a static path"}), 404
+
         # if file doesn't exist, fallback to chatbot page
         fullpath = os.path.join(static_root, path)
         if not os.path.exists(fullpath):

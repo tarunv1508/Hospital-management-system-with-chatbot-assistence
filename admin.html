@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Admin Dashboard - PrimeLife Hospital</title>
+  <meta name="description" content="Admin login and appointment dashboard for PrimeLife Hospital.">
+  <meta name="keywords" content="admin, dashboard, hospital, appointments, doctors, departments">
+
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
+
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link href="assets/css/main.css" rel="stylesheet">
+  <link href="assets/css/enhanced-styles.css" rel="stylesheet">
+</head>
+
+<body class="admin-page">
+
+  <header id="header" class="header fixed-top">
+    <div class="topbar d-flex align-items-center dark-background">
+      <div class="container d-flex justify-content-center justify-content-md-between">
+        <div class="contact-info d-flex align-items-center">
+          <i class="bi bi-envelope d-flex align-items-center"><a href="mailto:PrimeLife@gmail.com">PrimeLife Hospital</a></i>
+          <i class="bi bi-phone d-flex align-items-center ms-4"><span>9866208819</span></i>
+        </div>
+      </div>
+    </div>
+    <div class="branding d-flex align-items-cente">
+      <div class="container position-relative d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+          <h1 class="sitename">PrimeLife Hospital</h1>
+        </a>
+       <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="departments.html">Departments</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="doctors.html">Doctors</a></li>
+           
+            <li class="dropdown"><a href="Chatbot.html">Chatbot</a></li>
+              
+          
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="admin.html">Admin</a></li>
+            <li><a href="privacy-terms.html">Privacy &amp; Terms</a></li>
+
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="admin-section section" style="padding-top: 60px;">
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-center" style="min-height:50vh;">
+          <div id="admin-login-card" class="admin-card card mx-auto mt-4" style="max-width:520px;">
+          <div class="card-body p-5">
+            <h2 class="card-title text-center mb-4">Admin Login</h2>
+            <div id="admin-login-alert" class="alert alert-danger d-none"></div>
+            <form id="admin-login-form">
+              <div class="mb-3">
+                <label for="admin-username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="admin-username" placeholder="Admin username" required>
+              </div>
+              <div class="mb-3">
+                <label for="admin-password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="admin-password" placeholder="Password" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+          </div>
+          </div>
+        </div>
+
+        <div id="admin-dashboard" class="d-none">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 class="mb-1">Admin Dashboard</h2>
+              <p class="text-muted mb-0">Manage departments, doctors, and appointments securely.</p>
+            </div>
+            <button id="admin-logout-button" class="btn btn-outline-secondary">Logout</button>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-4">
+              <div class="card stats-card p-4 text-center">
+                <h5>Total Appointments</h5>
+                <p id="total-appointments" class="display-6 mb-0">0</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card stats-card p-4 text-center">
+                <h5>Total Departments</h5>
+                <p id="total-departments" class="display-6 mb-0">0</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card stats-card p-4 text-center">
+                <h5>Total Doctors</h5>
+                <p id="total-doctors" class="display-6 mb-0">0</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-12">
+              <div class="card admin-card p-4">
+                <h3 class="mb-3">Departments</h3>
+                <div id="department-list" class="row g-4"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="doctor-appointments-card" class="card admin-card p-4 mt-4 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h4 id="doctor-appointments-title" class="mb-1">Doctor Appointments</h4>
+                <p id="doctor-appointments-meta" class="text-muted mb-0"></p>
+              </div>
+              <button id="doctor-appointments-close" class="btn btn-sm btn-outline-secondary">Close</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered mb-0">
+                <thead class="table-secondary">
+                  <tr>
+                    <th>Appointment ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="doctor-appointments-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" class="footer-16 footer position-relative">
+    <div class="container">
+      <div class="footer-bottom">
+        <div class="row align-items-center">
+          <div class="col-lg-6">
+            <p>© <span class="sitename">PrimeLife Hospital</span>. All rights reserved.</p>
+          </div>
+          <div class="col-lg-6 text-end">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+
+</html>

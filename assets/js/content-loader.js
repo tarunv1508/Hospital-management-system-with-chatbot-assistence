@@ -28,8 +28,22 @@ class ContentLoader {
 
     this.currentDepartment = dept;
 
-    // Update page title
+    // Update page title and heading
     document.title = `${dept.title} - Hospital`;
+    const pageHeadingTitle = document.querySelector('.page-title .heading-title');
+    if (pageHeadingTitle) {
+      pageHeadingTitle.textContent = dept.title;
+    }
+
+    const pageHeadingDescription = document.querySelector('.page-title .mb-0');
+    if (pageHeadingDescription) {
+      pageHeadingDescription.textContent = dept.shortDescription;
+    }
+
+    const breadcrumbCurrent = document.querySelector('.breadcrumbs li.current');
+    if (breadcrumbCurrent) {
+      breadcrumbCurrent.textContent = dept.name;
+    }
 
     // Update hero section
     const heroSection = document.querySelector('.department-hero');
@@ -58,7 +72,7 @@ class ContentLoader {
 
         <div class="action-group">
           <a href="appointment.html" class="btn-primary">Schedule Consultation</a>
-          <a href="services.html" class="btn-secondary">
+          <a href="services.html?dept=${dept.id}" class="btn-secondary">
             <span>View All Services</span>
             <i class="bi bi-arrow-right"></i>
           </a>
@@ -71,6 +85,34 @@ class ContentLoader {
     if (deptImage) {
       deptImage.src = dept.image;
       deptImage.alt = dept.title;
+    }
+
+    // Update section heading for department services
+    const servicesOverviewTitle = document.querySelector('.services-overview-title');
+    if (servicesOverviewTitle) {
+      servicesOverviewTitle.textContent = `Our ${dept.name} Services`;
+    }
+
+    const servicesOverviewDescription = document.querySelector('.services-overview-description');
+    if (servicesOverviewDescription) {
+      servicesOverviewDescription.textContent = dept.shortDescription;
+    }
+
+    const specialistCount = document.querySelector('.specialist-count');
+    if (specialistCount) {
+      specialistCount.textContent = dept.doctors.length;
+    }
+
+    const viewAllLink = document.querySelector('#view-all-services-link');
+    if (viewAllLink) {
+      viewAllLink.href = `services.html?dept=${dept.id}`;
+    }
+
+    // Update expert section image if present
+    const expertImage = document.querySelector('.expert-image img');
+    if (expertImage) {
+      expertImage.src = dept.image;
+      expertImage.alt = `${dept.title} expert`;
     }
 
     // Update services grid
@@ -170,7 +212,7 @@ class ContentLoader {
           ${dept.doctors.map((doctorName, index) => {
             const doctor = this.getDoctor(doctorName);
             return doctor ? `
-              <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="${${index * 50}}">
+              <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="${index * 50}">
                 <div class="doctor-card">
                   <div class="doctor-image">
                     <img src="${doctor.image}" alt="${doctor.name}" class="img-fluid">
@@ -325,6 +367,44 @@ class ContentLoader {
       'IBD Management': 'heart-pulse'
     };
     return iconMap[serviceName] || 'check-circle';
+  }
+
+  // Render all departments into a listing grid
+  renderDepartmentCards(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const departmentIds = Object.keys(departmentsData).sort((a, b) => {
+      return departmentsData[a].name.localeCompare(departmentsData[b].name);
+    });
+
+    container.innerHTML = departmentIds.map(deptId => {
+      const dept = departmentsData[deptId];
+      return `
+        <div class="col-lg-4 col-md-6" data-aos="fade-up">
+          <div class="department-card">
+            <div class="department-icon">
+              <i class="${this.getDepartmentIcon(dept.icon)}"></i>
+            </div>
+            <div class="department-image">
+              <img src="${dept.image}" alt="${dept.name} Department" class="img-fluid">
+            </div>
+            <div class="department-content">
+              <h3>${dept.name}</h3>
+              <p>${dept.shortDescription}</p>
+              <a href="department-details.html?dept=${dept.id}" class="learn-more">
+                <span>Learn More</span>
+                <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  getDepartmentIcon(iconClass) {
+    return iconClass || 'fas fa-hospital';
   }
 
   // Initialize from URL parameters

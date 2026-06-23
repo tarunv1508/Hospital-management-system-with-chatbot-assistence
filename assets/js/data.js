@@ -103,7 +103,7 @@ const departmentsData = {
     shortDescription: "Comprehensive skin care services including diagnosis and treatment of skin, hair, and nail conditions.",
     longDescription: "Our Dermatology Department offers expert care for all skin, hair, and nail conditions. From acne and eczema to skin cancer screening and cosmetic treatments, our dermatologists provide comprehensive dermatological services using the latest technology and treatment methods.",
     icon: "fas fa-spa",
-    image: "assets/img/health/skin-care.webp",
+    image: "assets/img/health/dermatology-1.webp",
     services: [
       { name: "Skin Cancer Screening", description: "Early detection and treatment of skin cancers" },
       { name: "Acne Treatment", description: "Comprehensive acne management programs" },
@@ -127,7 +127,7 @@ const departmentsData = {
     shortDescription: "Specialized cancer treatment and care with multidisciplinary approach and advanced therapeutic options.",
     longDescription: "Our Oncology Department provides comprehensive cancer care with a multidisciplinary team approach. We offer chemotherapy, radiation therapy, targeted therapy, and immunotherapy. Our goal is to provide personalized cancer treatment plans that maximize effectiveness while minimizing side effects.",
     icon: "fas fa-pills",
-    image: "assets/img/health/oncology.webp",
+    image: "assets/img/health/oncology-2.webp",
     services: [
       { name: "Chemotherapy", description: "Drug therapy for cancer treatment" },
       { name: "Radiation Therapy", description: "Targeted radiation treatment" },
@@ -151,7 +151,7 @@ const departmentsData = {
     shortDescription: "Specialized care for ear, nose, and throat conditions with surgical and non-surgical treatment options.",
     longDescription: "Our ENT Department specializes in the diagnosis and treatment of disorders affecting the ear, nose, throat, head, and neck. Our otolaryngologists provide both medical and surgical treatments for a wide range of ENT conditions, ensuring optimal hearing, breathing, and quality of life.",
     icon: "fas fa-ear",
-    image: "assets/img/health/ent.webp",
+    image: "assets/img/health/neurology-4.webp",
     services: [
       { name: "Hearing Assessment", description: "Comprehensive audiological testing" },
       { name: "Sinus Surgery", description: "Surgical treatment of sinus conditions" },
@@ -175,7 +175,7 @@ const departmentsData = {
     shortDescription: "Expert diagnosis and treatment of digestive system disorders using advanced endoscopic procedures.",
     longDescription: "Our Gastroenterology Department specializes in the diagnosis and treatment of diseases affecting the digestive system. We offer advanced endoscopic procedures, surgical interventions, and medical management for gastrointestinal conditions.",
     icon: "fas fa-utensils",
-    image: "assets/img/health/gastro.webp",
+    image: "assets/img/health/laboratory-3.webp",
     services: [
       { name: "Endoscopy", description: "Diagnostic and therapeutic endoscopic procedures" },
       { name: "Colonoscopy", description: "Colorectal screening and treatment" },
@@ -190,6 +190,198 @@ const departmentsData = {
     ],
     conditions: ["Gastroesophageal Reflux", "Irritable Bowel Syndrome", "Crohn's Disease", "Ulcerative Colitis", "Gallstones", "Liver Disease"],
     doctors: ["DR.Rohit Verma", "DR.Priya Singh", "DR.Aditya Sengupta"]
+  },
+
+  nephrology: {
+    id: "nephrology",
+    name: "Nephrology",
+    title: "Nephrology Department",
+    shortDescription: "Expert kidney care and dialysis services for acute and chronic renal conditions.",
+    longDescription: "Our Nephrology Department offers comprehensive care for kidney diseases, electrolyte imbalances, and hypertension management. We provide advanced dialysis support and personalized treatment plans for patients at every stage of renal health.",
+    icon: "fas fa-tint",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Dialysis Support", description: "Chronic and acute dialysis care with patient-centered management" },
+      { name: "Kidney Disease Management", description: "Diagnosis and treatment of kidney disorders and hypertension" },
+      { name: "Renal Biopsy", description: "Accurate diagnosis through advanced kidney tissue sampling" },
+      { name: "Electrolyte Care", description: "Specialized management of fluid and electrolyte imbalances" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Kidney specialists" },
+      { icon: "bi-clock-history", text: "Dialysis units available" },
+      { icon: "bi-shield-plus", text: "Hypertension care" },
+      { icon: "bi-heart-pulse", text: "Chronic disease monitoring" }
+    ],
+    conditions: ["Chronic Kidney Disease", "Kidney Stones", "Hypertension", "Dialysis", "Electrolyte Disorders"],
+    doctors: ["DR.Sanjay Kumar", "DR.Meera Nair", "DR.Rajiv Desai"]
+  },
+
+  urology: {
+    id: "urology",
+    name: "Urology",
+    title: "Urology Department",
+    shortDescription: "Complete urinary tract and male reproductive health services with the latest surgical techniques.",
+    longDescription: "Our Urology Department provides diagnosis and treatment for urinary tract disorders, prostate conditions, and male reproductive health. We combine minimally invasive surgery with medical therapies to protect kidney and bladder function.",
+    icon: "fas fa-viruses",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Stone Management", description: "Shock wave lithotripsy and surgical removal of kidney stones" },
+      { name: "Prostate Care", description: "Diagnosis and treatment of prostate enlargement and prostate cancer" },
+      { name: "Bladder Health", description: "Treatment of urinary incontinence and infections" },
+      { name: "Male Fertility", description: "Comprehensive evaluation and care for male reproductive health" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Urology specialists" },
+      { icon: "bi-clock-history", text: "Minimally invasive surgery" },
+      { icon: "bi-shield-plus", text: "Advanced diagnostics" },
+      { icon: "bi-heart-pulse", text: "Patient-centered care" }
+    ],
+    conditions: ["Kidney Stones", "Prostate Disorders", "Urinary Incontinence", "Bladder Infections", "Male Infertility"],
+    doctors: ["DR.Harsh Patel", "DR.Vikas Sharma", "DR.Amit Singh"]
+  },
+
+  pulmonology: {
+    id: "pulmonology",
+    name: "Pulmonology",
+    title: "Pulmonology Department",
+    shortDescription: "Specialized care for respiratory and lung conditions, including asthma and COPD management.",
+    longDescription: "Our Pulmonology Department provides advanced respiratory care for conditions such as asthma, COPD, pneumonia, and lung infections. We offer pulmonary function testing, inhalation therapy, and critical respiratory support.",
+    icon: "fas fa-lungs",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Breathing Therapy", description: "Supportive care for asthma and chronic lung disease" },
+      { name: "Pulmonary Testing", description: "Lung function tests for accurate respiratory diagnosis" },
+      { name: "Sleep Apnea Care", description: "Evaluation and treatment for sleep-related breathing disorders" },
+      { name: "Pneumonia Management", description: "Comprehensive treatment for infections affecting the lungs" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Respiratory specialists" },
+      { icon: "bi-clock-history", text: "Pulmonary rehabilitation" },
+      { icon: "bi-shield-plus", text: "Diagnostic imaging" },
+      { icon: "bi-heart-pulse", text: "Chronic care programs" }
+    ],
+    conditions: ["Asthma", "COPD", "Pneumonia", "Sleep Apnea", "Lung Infections"],
+    doctors: ["DR.Deepak Verma", "DR.Sneha Kumar", "DR.Arjun Sharma"]
+  },
+
+  endocrinology: {
+    id: "endocrinology",
+    name: "Endocrinology",
+    title: "Endocrinology Department",
+    shortDescription: "Hormonal health care for diabetes, thyroid disorders, and metabolic conditions.",
+    longDescription: "Our Endocrinology Department offers expert care for hormonal and metabolic disorders. We diagnose and manage diabetes, thyroid disease, adrenal disorders, and osteoporosis with personalized treatment plans.",
+    icon: "fas fa-vial",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Diabetes Management", description: "Comprehensive care for type 1 and type 2 diabetes" },
+      { name: "Thyroid Care", description: "Diagnosis and treatment of thyroid imbalances" },
+      { name: "Hormone Therapy", description: "Management of hormonal disorders and metabolic health" },
+      { name: "Bone Health", description: "Osteoporosis screening and treatment" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Endocrine specialists" },
+      { icon: "bi-clock-history", text: "Chronic disease management" },
+      { icon: "bi-shield-plus", text: "Hormone testing" },
+      { icon: "bi-heart-pulse", text: "Personalized nutrition care" }
+    ],
+    conditions: ["Diabetes", "Thyroid Disorders", "Hormonal Imbalance", "Osteoporosis", "Adrenal Disorders"],
+    doctors: ["DR.Divya Singh", "DR.Ashok Nair", "DR.Priya Gupta"]
+  },
+
+  gynecology: {
+    id: "gynecology",
+    name: "Gynecology",
+    title: "Gynecology Department",
+    shortDescription: "Women’s health services including prenatal care, menstrual health, and reproductive wellness.",
+    longDescription: "Our Gynecology Department provides compassionate care for women’s health across all life stages. We offer prenatal services, gynecological screenings, menopause support, and reproductive health counseling.",
+    icon: "fas fa-female",
+    image: "assets/img/health/maternal-2.webp",
+    services: [
+      { name: "Prenatal Care", description: "Comprehensive pregnancy monitoring and support" },
+      { name: "Menstrual Health", description: "Diagnosis and treatment for menstrual disorders" },
+      { name: "Fertility Counseling", description: "Reproductive health guidance and fertility evaluation" },
+      { name: "Gynecologic Surgery", description: "Minimally invasive and general gynecologic procedures" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Women’s health experts" },
+      { icon: "bi-clock-history", text: "Prenatal and postnatal care" },
+      { icon: "bi-shield-plus", text: "Reproductive health services" },
+      { icon: "bi-heart-pulse", text: "Personalized family planning" }
+    ],
+    conditions: ["Pregnancy Care", "Menstrual Disorders", "Fertility Issues", "Menopause Support", "Gynecologic Surgery"],
+    doctors: ["DR.Ragini Sharma", "DR.Neha Verma", "DR.Anjali Patel"]
+  },
+
+  psychiatry: {
+    id: "psychiatry",
+    name: "Psychiatry",
+    title: "Psychiatry Department",
+    shortDescription: "Mental health support for anxiety, depression, stress, and behavioral wellness.",
+    longDescription: "Our Psychiatry Department provides mental health assessment and treatment through counseling, medication management, and behavioral therapies. We support emotional wellness and recovery for patients facing anxiety, depression, and stress-related conditions.",
+    icon: "fas fa-user-md",
+    image: "assets/img/health/staff-8.webp",
+    services: [
+      { name: "Counseling Services", description: "Individual and group therapy for mental health support" },
+      { name: "Medication Management", description: "Psychiatric medication review and monitoring" },
+      { name: "Stress Management", description: "Therapies for anxiety and emotional wellness" },
+      { name: "Behavioral Health", description: "Comprehensive care for mood and behavioral conditions" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Mental health specialists" },
+      { icon: "bi-clock-history", text: "Therapy and counseling" },
+      { icon: "bi-shield-plus", text: "Medication support" },
+      { icon: "bi-heart-pulse", text: "Holistic wellness plans" }
+    ],
+    conditions: ["Anxiety", "Depression", "Stress Disorders", "Bipolar Disorder", "Sleep Disorders"],
+    doctors: ["DR.Ramesh Singh", "DR.Anjali Kumar", "DR.Vikram Desai"]
+  },
+
+  general_medicine: {
+    id: "general_medicine",
+    name: "General Medicine",
+    title: "General Medicine Department",
+    shortDescription: "Primary care for acute illness, preventive health, and routine wellness visits.",
+    longDescription: "Our General Medicine Department provides primary care services for common health concerns, preventive check-ups, and long-term wellness management. We focus on early diagnosis and personalized treatment to keep patients healthy.",
+    icon: "fas fa-notes-medical",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Health Checkups", description: "Routine wellness visits and preventive screenings" },
+      { name: "Acute Illness Care", description: "Diagnosis and treatment for common infections and conditions" },
+      { name: "Chronic Disease Follow-up", description: "Management of hypertension, diabetes, and other chronic conditions" },
+      { name: "Vaccination Services", description: "Immunizations for adults and seniors" }
+    ],
+    features: [
+      { icon: "bi-award", text: "Primary care physicians" },
+      { icon: "bi-clock-history", text: "Same-day consultations" },
+      { icon: "bi-shield-plus", text: "Preventive screening" },
+      { icon: "bi-heart-pulse", text: "Family health focus" }
+    ],
+    conditions: ["Fever", "Infections", "Chronic Disease Management", "General Weakness", "Preventative Care"],
+    doctors: ["DR.S.Arjun Reddy", "DR.Ramesh Kumar", "DR.Pooja Menon"]
+  },
+
+  general: {
+    id: "general",
+    name: "General Consultation",
+    title: "General Consultation",
+    shortDescription: "Accessible general health assessment and referrals for all non-emergency concerns.",
+    longDescription: "Our General Consultation service provides flexible access to medical evaluation for a wide range of symptoms. We help patients find the right care pathway and coordinate referrals to specialist departments when needed.",
+    icon: "fas fa-stethoscope",
+    image: "assets/img/health/consultation-4.webp",
+    services: [
+      { name: "Initial Medical Evaluation", description: "Comprehensive health assessment and medical advice" },
+      { name: "Specialist Referral", description: "Coordinated referrals to specialists based on your symptoms" },
+      { name: "Wellness Counseling", description: "Guidance on healthy lifestyle choices and prevention" },
+      { name: "Follow-up Care", description: "Ongoing monitoring and support for non-emergency concerns" }
+    ],
+    features: [
+      { icon: "bi-award", text: "General physicians" },
+      { icon: "bi-clock-history", text: "Easy appointment access" },
+      { icon: "bi-shield-plus", text: "Care coordination" },
+      { icon: "bi-heart-pulse", text: "Referral support" }
+    ],
+    conditions: ["Routine Health Concerns", "New Symptoms", "Referrals", "Preventive Care", "General Advice"],
+    doctors: ["DR.S.Arjun Reddy", "DR.Ramesh Kumar", "DR.Pooja Menon", "DR.Vikram Singh", "DR.S.SaiPriya", "DR.N.MadhuLatha"]
   }
 };
 
@@ -247,7 +439,7 @@ const servicesData = {
     shortDescription: "Advanced medical imaging using X-ray, CT, MRI, and ultrasound technology.",
     longDescription: "Our radiology department is equipped with the latest imaging technology. We provide comprehensive diagnostic and interventional radiology services for all medical conditions.",
     icon: "fas fa-radiation",
-    image: "assets/img/health/radiology.webp",
+    image: "assets/img/health/facilities-6.webp",
     details: [
       { icon: "bi-activity", title: "CT Scanning", description: "High-resolution computed tomography imaging" },
       { icon: "bi-diagram-2", title: "MRI Imaging", description: "Advanced magnetic resonance imaging" },
@@ -262,7 +454,7 @@ const servicesData = {
     shortDescription: "Comprehensive rehabilitation services for post-surgery recovery and chronic pain management.",
     longDescription: "Our physiotherapy department offers personalized rehabilitation programs for various conditions. We combine manual therapy with modern therapeutic techniques to restore function and mobility.",
     icon: "fas fa-person-walking",
-    image: "assets/img/health/physiotherapy.webp",
+    image: "assets/img/health/staff-10.webp",
     details: [
       { icon: "bi-activity", title: "Post-Surgery Rehab", description: "Specialized rehabilitation after surgical procedures" },
       { icon: "bi-diagram-2", title: "Pain Management", description: "Physical therapy for chronic pain relief" },
@@ -277,7 +469,7 @@ const servicesData = {
     shortDescription: "Complete dental services including preventive care, cosmetic, and surgical procedures.",
     longDescription: "Our dental services provide comprehensive oral healthcare. We offer preventive care, cosmetic dentistry, and advanced surgical procedures in a comfortable environment.",
     icon: "fas fa-tooth",
-    image: "assets/img/health/dental.webp",
+    image: "assets/img/health/dermatology-4.webp",
     details: [
       { icon: "bi-activity", title: "Preventive Care", description: "Regular cleaning and dental health maintenance" },
       { icon: "bi-diagram-2", title: "Cosmetic Dentistry", description: "Teeth whitening and cosmetic restoration" },

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return searchParams.get(param);
   }
 
-  const urlDepartment = getUrlParam('department');
+  const urlDepartment = getUrlParam('department') || getUrlParam('dept');
   const urlDoctor = getUrlParam('doctor');
   const savedDepartment = localStorage.getItem('selectedDepartment');
   const savedDoctor = localStorage.getItem('selectedDoctor');
