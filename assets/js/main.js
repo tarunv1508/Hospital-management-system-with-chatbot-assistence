@@ -49,6 +49,91 @@
   });
 
   /**
+   * Set the active nav link based on the current page URL
+   */
+  function setActiveNavLink() {
+    const navLinks = document.querySelectorAll('#navmenu a');
+    if (!navLinks.length) return;
+
+    const currentPage = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
+
+    function getNavTarget(page) {
+      if (page === '' || page === 'index.html') {
+        return 'index.html';
+      }
+      if (page === 'privacy.html' || page === 'terms.html' || page === 'privacy-terms.html') {
+        return 'privacy-terms.html';
+      }
+      if (page === 'department-details.html' || page.startsWith('department-')) {
+        return 'departments.html';
+      }
+      if (page === 'service-details.html' || page.startsWith('service-')) {
+        return 'services.html';
+      }
+      return page;
+    }
+
+    const targetHref = getNavTarget(currentPage);
+
+    navLinks.forEach(navLink => {
+      navLink.classList.remove('active');
+      const href = navLink.getAttribute('href')?.split('/').pop().toLowerCase();
+      if (href === targetHref) {
+        navLink.classList.add('active');
+      }
+    });
+  }
+
+  setActiveNavLink();
+
+  /**
+   * Auto-append department query to appointment links on department/service pages
+   */
+  function fixAppointmentLinksForCurrentPage() {
+    const pageName = window.location.pathname.split('/').pop().toLowerCase();
+    const departmentPages = {
+      'department-cardiology.html': 'cardiology',
+      'department-dental.html': 'dental',
+      'department-dermatology.html': 'dermatology',
+      'department-details.html': 'general',
+      'department-neurology.html': 'neurology',
+      'department-oncology.html': 'oncology',
+      'department-ophthalmology.html': 'ophthalmology',
+      'department-orthopedics.html': 'orthopedics',
+      'department-pediatrics.html': 'pediatrics'
+    };
+    const servicePages = {
+      'service-details.html': 'general',
+      'service-emergency-care.html': 'general',
+      'service-laboratory-testing.html': 'general',
+      'service-medical-imaging.html': 'general',
+      'service-mental-health.html': 'psychiatry',
+      'service-pharmacy-services.html': 'general',
+      'service-physiotherapy.html': 'orthopedics',
+      'service-telemedicine.html': 'general',
+      'service-wellness-programs.html': 'general'
+    };
+
+    const targetDept = departmentPages[pageName] || servicePages[pageName];
+    if (!targetDept) return;
+
+    document.querySelectorAll('a[href^="appointment.html"]').forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+
+      const [path, query = ''] = href.split('?');
+      if (path !== 'appointment.html' && path !== './appointment.html') return;
+      const params = new URLSearchParams(query);
+      if (params.get('department')) return;
+
+      params.set('department', targetDept);
+      link.setAttribute('href', `appointment.html?${params.toString()}`);
+    });
+  }
+
+  fixAppointmentLinksForCurrentPage();
+
+  /**
    * Toggle mobile nav dropdowns
    */
   document.querySelectorAll('.navmenu .toggle-dropdown').forEach(navmenu => {

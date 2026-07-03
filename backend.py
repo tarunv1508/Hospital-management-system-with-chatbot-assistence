@@ -188,6 +188,7 @@ def send_appointment_confirmation_email(to_email, appointment_data):
         f"Department: {appointment_data['department']}\n"
         f"Doctor: {appointment_data['doctor']}\n"
         f"Date: {appointment_data['appointment_date']}\n"
+        f"Time: {appointment_data['appointment_time']}\n"
         f"Phone: {appointment_data['phone']}\n"
         f"Notes: {appointment_data['notes'] or 'N/A'}\n\n"
         "Please arrive 15 minutes before your scheduled time. If you need to reschedule, reply to this email or call us at "
@@ -914,15 +915,18 @@ def appointment_submit():
 
         try:
             send_appointment_confirmation_email(email, appointment_data)
+            email_status = "OK"
+            email_message = "Appointment confirmed and confirmation email sent."
         except Exception as err:
-            app.logger.error(f"Failed to send appointment email: {err}")
-            return jsonify({
-                "status": "ERROR",
-                "message": "Appointment saved, but email could not be sent. Please contact support."
-            }), 500
+            app.logger.error(f"Failed to send appointment email: {err}", exc_info=True)
+            email_status = "WARNING"
+            email_message = (
+                "Appointment saved, but confirmation email could not be sent. "
+                "Please contact support if you do not receive your confirmation." 
+            )
 
-        return jsonify({
-            "status": "OK",
+        response_data = {
+            "status": email_status,
             "appointment_id": appointment_id,
             "name": name,
             "doctor": doctor,
@@ -931,8 +935,10 @@ def appointment_submit():
             "appointment_time": scheduled_time.strftime("%H:%M"),
             "email": email,
             "phone": phone,
-            "message": "Appointment confirmed!"
-        }), 200
+            "message": email_message,
+        }
+
+        return jsonify(response_data), 200
     except mysql.connector.Error as err:
         app.logger.error(f"Appointment insert failed: {err}")
         return jsonify({"status": "ERROR", "message": f"Database error: {err}"}), 500

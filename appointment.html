@@ -183,6 +183,8 @@
                         <option value="pediatrics">Pediatrics</option>
                         <option value="orthopedics">Orthopedics</option>
                         <option value="dermatology">Dermatology</option>
+                        <option value="dental">Dental</option>
+                        <option value="ophthalmology">Ophthalmology</option>
                         <option value="oncology">Oncology</option>
                         <option value="general_medicine">General Medicine</option>
                         <option value="ent">ENT</option>
@@ -503,25 +505,52 @@
 
       const doctorOptions = Array.from(doctorSelect.querySelectorAll('option'));
 
+      function normalizeValue(value) {
+        return value ? value.toString().trim().toLowerCase() : '';
+      }
+
+      function getDepartmentAliases(value) {
+        const normalized = normalizeValue(value);
+        if (!normalized) return [''];
+        if (normalized === 'general' || normalized === 'general_medicine') {
+          return ['general', 'general_medicine'];
+        }
+        return [normalized];
+      }
+
+      function shouldShowDoctorOption(optionDept, selectedDept) {
+        const aliases = getDepartmentAliases(selectedDept);
+        return aliases.includes(normalizeValue(optionDept));
+      }
+
       function updateDoctorOptions() {
         const selectedDept = departmentSelect.value;
-        doctorSelect.value = '';
+        const visibleDoctorValues = doctorOptions
+          .filter(option => option.value && shouldShowDoctorOption(option.getAttribute('data-department'), selectedDept))
+          .map(option => option.value);
+
+        if (!visibleDoctorValues.includes(doctorSelect.value)) {
+          doctorSelect.value = '';
+        }
 
         doctorOptions.forEach(option => {
           if (!option.value) {
             option.hidden = false;
             option.disabled = false;
+            option.style.display = 'block';
             return;
           }
 
           const optionDept = option.getAttribute('data-department');
-          const show = selectedDept !== '' && optionDept === selectedDept;
+          const show = selectedDept !== '' && shouldShowDoctorOption(optionDept, selectedDept);
           option.hidden = !show;
           option.disabled = !show;
+          option.style.display = show ? 'block' : 'none';
         });
       }
 
       departmentSelect.addEventListener('change', updateDoctorOptions);
+      document.addEventListener('departmentAutoFilled', updateDoctorOptions);
       updateDoctorOptions();
 
       // Handle form submission
