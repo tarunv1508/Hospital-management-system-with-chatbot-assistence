@@ -25,9 +25,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 HOSPITAL_PHONE = "+919866208819"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_env_file(path=".env"):
+def load_env_file(path=None):
+    if path is None:
+        path = os.path.join(BASE_DIR, ".env")
+    elif not os.path.isabs(path):
+        path = os.path.join(BASE_DIR, path)
+
     if not os.path.exists(path):
         return
 
